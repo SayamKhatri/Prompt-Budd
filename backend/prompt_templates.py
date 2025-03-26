@@ -35,5 +35,5 @@ def suggest_prompt_templates(user_prompt: str, num_templates: int = 3) -> List[s
 
     templates = [template.strip() for template in suggestions.strip().split("\n\n") if template.strip()]
 
-    return templates
+    return templates[0]
 
