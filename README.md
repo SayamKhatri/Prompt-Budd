@@ -12,3 +12,14 @@ prompt_assistant_project/
 │    └── (Chrome extension code)
 └── requirements.txt
 ```
+
+```
+chrome-extension/
+├── manifest.json
+├── content.js
+├── popup.html
+├── popup.css
+├── popup.js
+└── icons/
+    └── icon.png
+```
