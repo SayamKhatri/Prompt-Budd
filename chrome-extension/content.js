@@ -1,57 +1,83 @@
-alert("✅ Your Chrome Extension is injecting correctly!");
+console.log("Extension injected... using #prompt-textarea for ChatGPT");
 
-console.log("✅ Extension running at: " + window.location.href);
+function findActiveTextbox() {
+  const box = document.querySelector("#prompt-textarea.ProseMirror");
+  if (box && box.offsetParent !== null && box.isContentEditable) {
+    console.log("Found ChatGPT input box by ID and class");
+    return box;
+  }
+  return null;
+}
 
+function createFloatingButton() {
+  if (document.getElementById("smart-suggest-btn")) {
+    console.log("Button already exists");
+    return;
+  }
 
+  const btn = document.createElement("button");
+  btn.innerText = "✨ Suggest Prompt";
+  btn.id = "smart-suggest-btn";
+  btn.style.position = "fixed";
+  btn.style.bottom = "20px";
+  btn.style.right = "20px";
+  btn.style.zIndex = "99999";
+  btn.style.padding = "10px 16px";
+  btn.style.borderRadius = "8px";
+  btn.style.border = "none";
+  btn.style.backgroundColor = "#10a37f";
+  btn.style.color = "white";
+  btn.style.fontWeight = "bold";
+  btn.style.fontSize = "14px";
+  btn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+  btn.style.cursor = "pointer";
 
+  btn.addEventListener("click", () => {
+    const inputBox = findActiveTextbox();
 
-// console.log("✅ content.js is running");
+    if (!inputBox) {
+      alert("Couldn't find textbox. Try typing something first.");
+      return;
+    }
 
-// function createFloatingButton() {
-//   if (document.getElementById("suggest-prompt-floating")) return;
+    const originalPrompt = inputBox.innerText.trim();
+    if (!originalPrompt) {
+      alert("⚠️ Please type something into ChatGPT first.");
+      return;
+    }
 
-//   const btn = document.createElement("button");
-//   btn.innerText = "✨ Suggest Prompt";
-//   btn.id = "suggest-prompt-floating";
-//   btn.style.position = "fixed";
-//   btn.style.bottom = "20px";
-//   btn.style.right = "20px";
-//   btn.style.zIndex = "9999";
-//   btn.style.padding = "10px 16px";
-//   btn.style.borderRadius = "8px";
-//   btn.style.border = "none";
-//   btn.style.backgroundColor = "#10a37f";
-//   btn.style.color = "white";
-//   btn.style.fontWeight = "bold";
-//   btn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
-//   btn.style.cursor = "pointer";
+    fetch("http://localhost:8000/suggest-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: originalPrompt })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const suggestions = data.templates || [];
+        if (suggestions.length > 0) {
+          inputBox.innerText = "";
+          document.execCommand("insertText", false, suggestions[0]);
+        } else {
+          alert("⚠️ No suggestions found.");
+        }
+      })
+      .catch((err) => {
+        alert("Error contacting backend.");
+        console.error(err);
+      });
+  });
 
-//   btn.addEventListener("click", () => {
-//     const selection = window.getSelection().toString();
-//     const prompt = selection || prompt("Type a prompt to improve:", "");
+  document.body.appendChild(btn);
+  console.log("Floating button added");
+}
 
-//     if (!prompt || !prompt.trim()) return;
-
-//     fetch("http://localhost:8000/suggest-templates", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ prompt: prompt.trim() })
-//     })
-//       .then(res => res.json())
-//       .then(data => {
-//         const templates = data.templates;
-//         alert("✨ Suggested Prompt Templates:\n\n" + templates.join("\n\n"));
-//       })
-//       .catch(err => {
-//         alert("❌ Backend error. Is FastAPI running?");
-//         console.error(err);
-//       });
-//   });
-
-//   document.body.appendChild(btn);
-// }
-
-// window.addEventListener("load", () => {
-//   console.log("✅ Page loaded");
-//   setTimeout(createFloatingButton, 3000); // wait for page render
-// });
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    const box = findActiveTextbox();
+    if (box) {
+      createFloatingButton();
+    } else {
+      console.log("No input box found (fallback)");
+    }
+  }, 3000);
+});

@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Prompt Template Assistant",
+  "name": "Prompt Template Assistant (Fixed)",
   "version": "1.0",
-  "description": "Injects a test alert into ChatGPT.",
+  "description": "Test injection with alert.",
   "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["https://chat.openai.com/*"],
+  "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
-      "matches": ["https://chat.openai.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
