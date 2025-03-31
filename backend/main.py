@@ -32,7 +32,7 @@ async def get_prompt_score(request: PromptRequest):
     score = rate_prompt_quality(request.prompt)
     return {"score": score}
 
-@app.post("/suggest-llm") 
+@app.post("/prompt_classifier") 
 async def suggest_llm_model(request: PromptListRequest):
     result = classify_llm_for_prompts(request.prompts)
     return result
