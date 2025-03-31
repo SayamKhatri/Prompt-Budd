@@ -8,12 +8,11 @@ on:
       - 'backend/**'
 
 jobs:
-  continuous-integration:
+  continuous_integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
     outputs:
-      should-deploy: ${{ steps.check_merge.outputs.should_deploy }}
-
+      is_merge: ${{ steps.check_merge.outputs.is_merge }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -21,23 +20,20 @@ jobs:
       - name: Check if merge commit
         id: check_merge
         run: |
+          # A normal commit has 2 tokens (commit and one parent), while a merge commit has 3 or more.
           TOKEN_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
           if [ "$TOKEN_COUNT" -le 2 ]; then
-            echo "Not a merge commit. Skipping deployment."
-            echo "should_deploy=false" >> $GITHUB_OUTPUT
-            exit 0
+            echo "Not a merge commit. Skipping delivery & deployment."
+            echo "is_merge=false" >> $GITHUB_OUTPUT
           else
-            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "is_merge=true" >> $GITHUB_OUTPUT
           fi
 
-  continuous-delivery:
+  continuous_delivery:
     name: Continuous Delivery
-    needs: continuous-integration
-    if: needs.continuous-integration.outputs.should-deploy == 'true'
     runs-on: ubuntu-latest
-    outputs:
-      image-url: ${{ steps.build-push.outputs.image-url }}
-
+    needs: continuous_integration
+    if: needs.continuous_integration.outputs.is_merge == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -53,28 +49,24 @@ jobs:
           project_id: promptbud
 
       - name: Build and Push Docker Image to Artifact Registry
-        id: build-push
         run: |
           IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           docker build -t $IMAGE .
           gcloud auth configure-docker us-east1-docker.pkg.dev
           docker push $IMAGE
-          echo "image-url=$IMAGE" >> $GITHUB_OUTPUT
 
-  continuous-deployment:
+  continuous_deployment:
     name: Continuous Deployment
-    needs: continuous-delivery
     runs-on: ubuntu-latest
-
+    needs: continuous_delivery
+    if: needs.continuous_integration.outputs.is_merge == 'true'
     steps:
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="${{ needs.continuous-delivery.outputs.image-url }}"
+          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           gcloud run deploy prompt-assistant \
             --image=$IMAGE \
             --platform=managed \
