@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
 
 jobs:
   deploy:
@@ -13,6 +15,16 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Check if merge commit
+        id: check_merge
+        run: |
+          # A normal commit has 2 tokens (commit and one parent), a merge commit has 3 or more.
+          TOKEN_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
+          if [ "$TOKEN_COUNT" -le 2 ]; then
+            echo "Not a merge commit. Skipping deployment."
+            exit 0
+          fi
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -26,14 +38,14 @@ jobs:
 
       - name: Build and Push Docker Image to Artifact Registry
         run: |
-          IMAGE="us-east1-docker.pkg.dev/promptbud/prompt-bud/prompt-assistant"
+          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           docker build -t $IMAGE .
           gcloud auth configure-docker us-east1-docker.pkg.dev
           docker push $IMAGE
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="us-east1-docker.pkg.dev/promptbud/prompt-bud/prompt-assistant"
+          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           gcloud run deploy prompt-assistant \
             --image=$IMAGE \
             --platform=managed \
