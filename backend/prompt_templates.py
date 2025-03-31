@@ -16,7 +16,8 @@ def suggest_prompt_templates(user_prompt: str, num_templates: int = 3) -> List[s
         'conversation with more than one human prompt, the whole conversation will be given as context for you to evaluate
         'how to construct the best possible response in that part of the conversation. Do not generate anything besides '
         'the optimized prompt with no headers or explanations of the optimized prompt.'
-    """
+
+        """
 
     formatted_system_message = system_message.format(num_templates=num_templates)
 
