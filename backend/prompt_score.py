@@ -2,9 +2,11 @@ from google import genai
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+api_key = os.environ["GEMINI_API_KEY"]
+client = genai.Client(api_key)
+
 
 def rate_prompt_quality(prompt: str) -> str:
     scoring_prompt = (
@@ -31,7 +33,3 @@ def rate_prompt_quality(prompt: str) -> str:
         print("Error from Gemini:", e)
         return "unknown"
 
-print(rate_prompt_quality('''
-                            
-                          propose  project ideas in genai
-                          '''))
