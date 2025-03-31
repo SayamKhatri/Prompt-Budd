@@ -53,3 +53,4 @@ jobs:
             --allow-unauthenticated \
             --memory=512Mi \
             --port=8080
+            --set-env-vars=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
