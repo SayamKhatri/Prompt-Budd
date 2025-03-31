@@ -26,7 +26,7 @@ def suggest_prompt_templates(user_prompt: str, num_templates: int = 3) -> List[s
             {"role": "system", "content": formatted_system_message},
             {"role": "user", "content": f"User's original prompt: '{user_prompt}'"}
         ],
-        max_tokens=800,
+        max_tokens=700,
         temperature=0.6
     )
 
