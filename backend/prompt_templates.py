@@ -1,4 +1,3 @@
-# prompt_templates.py
 from typing import List
 import openai
 import os
