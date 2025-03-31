@@ -18,7 +18,7 @@ jobs:
       - name: Run Tests (CI Step)
         run: |
           echo "Running tests..."
-          
+          # Add your test commands here (e.g., pytest, linting, etc.)
 
   continuous_delivery:
     name: Continuous Delivery
@@ -52,6 +52,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
