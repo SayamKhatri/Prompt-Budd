@@ -1,9 +1,9 @@
-name: Deploy to Cloud Run
+name: Deploy to Cloud Run on merge to main
 
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
   deploy:
@@ -11,33 +11,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Google Cloud credentials
-        uses: google-github-actions/auth@v1
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: promptbud
-          install_components: 'beta'
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker Image to Artifact Registry
         run: |
-          IMAGE="location-docker.pkg.dev/promptbud/promptbuddy/prompt-assistant"
-          gcloud auth configure-docker location-docker.pkg.dev
+          IMAGE="us-east1-docker.pkg.dev/promptbud/prompt-bud/prompt-assistant"
           docker build -t $IMAGE .
+          gcloud auth configure-docker us-east1-docker.pkg.dev
           docker push $IMAGE
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="location-docker.pkg.dev/promptbud/promptbuddy/prompt-assistant"
+          IMAGE="us-east1-docker.pkg.dev/promptbud/prompt-bud/prompt-assistant"
           gcloud run deploy prompt-assistant \
-            --image $IMAGE \
-            --region us-central1 \
-            --platform managed \
+            --image=$IMAGE \
+            --platform=managed \
+            --region=us-east1 \
             --allow-unauthenticated \
-            --port 8080
+            --memory=512Mi \
+            --port=8080
