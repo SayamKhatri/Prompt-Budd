@@ -18,7 +18,7 @@ jobs:
       - name: Run Tests (CI Step)
         run: |
           echo "Running tests..."
-          # Add your test commands here (e.g., pytest, linting, etc.)
+          
 
   continuous_delivery:
     name: Continuous Delivery
@@ -65,6 +65,7 @@ jobs:
             --image=$IMAGE \
             --platform=managed \
             --region=us-east1 \
+            --project=promptbud \
             --allow-unauthenticated \
             --memory=512Mi \
             --port=8080 \
