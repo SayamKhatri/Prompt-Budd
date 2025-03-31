@@ -36,3 +36,4 @@ async def get_prompt_score(request: PromptRequest):
 async def suggest_llm_model(request: PromptListRequest):
     result = classify_llm_for_prompts(request.prompts)
     return result
+

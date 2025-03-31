@@ -1,0 +1,56 @@
+name: Deploy to Cloud Run on merge to main
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Check if merge commit
+        id: check_merge
+        run: |
+          # A normal commit has 2 tokens (commit and one parent), a merge commit has 3 or more.
+          TOKEN_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
+          if [ "$TOKEN_COUNT" -le 2 ]; then
+            echo "Not a merge commit. Skipping deployment."
+            exit 0
+          fi
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: promptbud
+
+      - name: Build and Push Docker Image to Artifact Registry
+        run: |
+          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
+          docker build -t $IMAGE .
+          gcloud auth configure-docker us-east1-docker.pkg.dev
+          docker push $IMAGE
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
+          gcloud run deploy prompt-assistant \
+            --image=$IMAGE \
+            --platform=managed \
+            --region=us-east1 \
+            --allow-unauthenticated \
+            --memory=512Mi \
+            --port=8080
+            --set-env-vars=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
