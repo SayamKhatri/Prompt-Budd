@@ -47,7 +47,7 @@ function scorePrompt(prompt) {
 
   lastScoredPrompt = cleaned;
 
-  fetch("http://localhost:8000/prompt-score", {
+  fetch("https://prompt-assistant-282032561204.us-east1.run.app/prompt-score", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: cleaned })
@@ -69,7 +69,7 @@ function scorePrompt(prompt) {
 
 function checkAndUpdateLLMSuggestion() {
   if (promptHistory.length === 0) return;
-  fetch("http://localhost:8000/prompt_classifier", {
+  fetch("https://prompt-assistant-282032561204.us-east1.run.app/prompt_classifier", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompts: promptHistory })
@@ -263,7 +263,7 @@ function createFloatingButton() {
       alert("⚠️ Please type something into ChatGPT first.");
       return;
     }
-    fetch("http://localhost:8000/suggest-templates", {
+    fetch("https://prompt-assistant-282032561204.us-east1.run.app/suggest-templates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: originalPrompt })
