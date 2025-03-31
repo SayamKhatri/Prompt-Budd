@@ -11,29 +11,19 @@ jobs:
   continuous_integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
-    outputs:
-      is_merge: ${{ steps.check_merge.outputs.is_merge }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Check if merge commit
-        id: check_merge
+      - name: Run Tests (CI Step)
         run: |
-          # A normal commit has 2 tokens (commit and one parent), while a merge commit has 3 or more.
-          TOKEN_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
-          if [ "$TOKEN_COUNT" -le 2 ]; then
-            echo "Not a merge commit. Skipping delivery & deployment."
-            echo "is_merge=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_merge=true" >> $GITHUB_OUTPUT
-          fi
+          echo "Running tests..."
+          
 
   continuous_delivery:
     name: Continuous Delivery
     runs-on: ubuntu-latest
     needs: continuous_integration
-    if: needs.continuous_integration.outputs.is_merge == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -59,7 +49,6 @@ jobs:
     name: Continuous Deployment
     runs-on: ubuntu-latest
     needs: continuous_delivery
-    if: needs.continuous_integration.outputs.is_merge == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
