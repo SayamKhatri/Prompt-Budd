@@ -15,13 +15,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Run Tests (CI Step)
+      - name: Run Tests
         run: |
           echo "Running tests..."
-          # Add your test commands here (e.g., pytest, linting, etc.)
+          # Insert your test commands here (e.g., pytest, linters, etc.)
 
-  continuous_delivery:
-    name: Continuous Delivery
+  continuous_deployment:
+    name: Continuous Deployment
     runs-on: ubuntu-latest
     needs: continuous_integration
     steps:
@@ -38,30 +38,16 @@ jobs:
         with:
           project_id: promptbud
 
+      - name: Set gcloud project configuration
+        run: |
+          gcloud config set project promptbud
+
       - name: Build and Push Docker Image to Artifact Registry
         run: |
           IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           docker build -t $IMAGE .
           gcloud auth configure-docker us-east1-docker.pkg.dev
           docker push $IMAGE
-
-  continuous_deployment:
-    name: Continuous Deployment
-    runs-on: ubuntu-latest
-    needs: continuous_delivery
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: promptbud
 
       - name: Deploy to Cloud Run
         run: |
