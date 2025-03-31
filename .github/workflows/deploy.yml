@@ -8,9 +8,11 @@ on:
       - 'backend/**'
 
 jobs:
-  deploy:
-    name: Build and Deploy
+  continuous-integration:
+    name: Continuous Integration
     runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check_merge.outputs.should_deploy }}
 
     steps:
       - name: Checkout Code
@@ -19,12 +21,26 @@ jobs:
       - name: Check if merge commit
         id: check_merge
         run: |
-          # A normal commit has 2 tokens (commit and one parent), a merge commit has 3 or more.
           TOKEN_COUNT=$(git rev-list --parents -n 1 HEAD | wc -w)
           if [ "$TOKEN_COUNT" -le 2 ]; then
             echo "Not a merge commit. Skipping deployment."
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
             exit 0
+          else
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
           fi
+
+  continuous-delivery:
+    name: Continuous Delivery
+    needs: continuous-integration
+    if: needs.continuous-integration.outputs.should-deploy == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image-url: ${{ steps.build-push.outputs.image-url }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -37,15 +53,28 @@ jobs:
           project_id: promptbud
 
       - name: Build and Push Docker Image to Artifact Registry
+        id: build-push
         run: |
           IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
           docker build -t $IMAGE .
           gcloud auth configure-docker us-east1-docker.pkg.dev
           docker push $IMAGE
+          echo "image-url=$IMAGE" >> $GITHUB_OUTPUT
+
+  continuous-deployment:
+    name: Continuous Deployment
+    needs: continuous-delivery
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="${{ secrets.ARTIFACT_REGISTRY_URL }}"
+          IMAGE="${{ needs.continuous-delivery.outputs.image-url }}"
           gcloud run deploy prompt-assistant \
             --image=$IMAGE \
             --platform=managed \
