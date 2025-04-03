@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from prompt_templates import suggest_prompt_templates
 from prompt_score import rate_prompt_quality
 from prompt_classifier import classify_llm_for_prompts  
+from detect_pii import contains_pii
 from pydantic import BaseModel
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,9 @@ class PromptRequest(BaseModel):
 class PromptListRequest(BaseModel):  
     prompts: List[str]
 
+class PiiRequest(BaseModel):           
+    text: str
+
 @app.post("/suggest-templates")
 async def suggest_templates(request: PromptRequest):
     suggestions = suggest_prompt_templates(request.prompt)
@@ -37,3 +41,7 @@ async def suggest_llm_model(request: PromptListRequest):
     result = classify_llm_for_prompts(request.prompts)
     return result
 
+@app.post("/detect-pii")              
+async def detect_pii_route(request: PiiRequest):
+    found = contains_pii(request.text)
+    return {"pii": found}

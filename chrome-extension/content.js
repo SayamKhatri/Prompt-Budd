@@ -1,3 +1,4 @@
+const BASE_URL = "http://localhost:8080";
 console.log("Extension injected...");
 
 let debounceTimer;
@@ -37,6 +38,52 @@ function removeScoreTag() {
   lastScoredPrompt = "";
 }
 
+/* ---------- New: PII Detection Functions ---------- */
+function showPIIPopup() {
+  // If the PII pop-up already exists, do nothing
+  if (document.getElementById("pii-tag")) return;
+  
+  const btn = document.getElementById("smart-suggest-btn");
+  if (!btn) return;
+  
+  // Ensure the button is the positioning context
+  btn.style.position = "relative";
+  
+  const tag = document.createElement("div");
+  tag.id = "pii-tag";
+  tag.className = "pii-tag";
+  tag.innerText = "PII Detected!";
+  
+  // Append the bubble as a child of the button
+  btn.appendChild(tag);
+}
+
+
+function removePIIPopup() {
+  const tag = document.getElementById("pii-tag");
+  if (tag) tag.remove();
+}
+
+function detectPII(prompt) {
+  fetch(`${BASE_URL}/detect-pii`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: prompt })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.pii === true) {
+        showPIIPopup();
+      } else {
+        removePIIPopup();
+      }
+    })
+    .catch(err => {
+      console.error("Error in detect-pii:", err);
+    });
+}
+/* ---------- End PII Detection ---------- */
+
 function scorePrompt(prompt) {
   if (!prompt || prompt.trim() === "") {
     removeScoreTag();
@@ -47,7 +94,7 @@ function scorePrompt(prompt) {
 
   lastScoredPrompt = cleaned;
 
-  fetch("http://localhost:8000/prompt-score", {
+  fetch(`${BASE_URL}/prompt-score`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: cleaned })
@@ -69,7 +116,7 @@ function scorePrompt(prompt) {
 
 function checkAndUpdateLLMSuggestion() {
   if (promptHistory.length === 0) return;
-  fetch("http://localhost:8000/prompt_classifier", {
+  fetch(`${BASE_URL}/prompt_classifier`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompts: promptHistory })
@@ -105,9 +152,11 @@ function observeInputBox() {
       const current = box.innerText.trim();
       if (!current) {
         removeScoreTag();
+        removePIIPopup();
         return;
       }
       scorePrompt(current);
+      detectPII(current); // Trigger PII detection in realtime
     }, 700);
   });
   observer.observe(box, {
@@ -263,7 +312,7 @@ function createFloatingButton() {
       alert("⚠️ Please type something into ChatGPT first.");
       return;
     }
-    fetch("http://localhost:8000/suggest-templates", {
+    fetch(`${BASE_URL}/suggest-templates`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: originalPrompt })
@@ -311,10 +360,10 @@ window.addEventListener("load", () => {
   }, 3000);
 });
 
-/* ------------------ CSS Injection for a Modern Teal Theme & Stylish Score Pop-up ------------------ */
+/* ------------------ CSS Injection for a Modern Teal Theme & Stylish Pop-ups ------------------ */
 const style = document.createElement("style");
 style.innerHTML = `
-  /* Container for the floating Prompt Buddy button and kebab menu */
+  /* Floating Prompt Buddy Container */
   #prompt-buddy-container {
     position: fixed;
     bottom: 20px;
@@ -323,10 +372,9 @@ style.innerHTML = `
     align-items: center;
     background: linear-gradient(45deg, #2ecc71, #27ae60);
     border-radius: 24px;
-    overflow: hidden;
+    overflow: visible;
     z-index: 99999;
   }
-  /* Main Prompt Buddy button */
   #smart-suggest-btn {
     background: none;
     border: none;
@@ -336,7 +384,6 @@ style.innerHTML = `
     padding: 12px 20px;
     cursor: pointer;
   }
-  /* Kebab menu button */
   #kebab-menu-btn {
     background: rgba(255, 255, 255, 0.1);
     border: none;
@@ -346,7 +393,6 @@ style.innerHTML = `
     display: none;
     cursor: pointer;
   }
-  /* Show kebab menu on hover over container */
   #prompt-buddy-container:hover #kebab-menu-btn {
     display: inline-block;
   }
@@ -439,7 +485,7 @@ style.innerHTML = `
     margin: 0;
   }
 
-  /* Stylish Score Pop-up as a Chat Notification */
+  /* Stylish Score Pop-up as a Chat Notification (Top Right) */
   .score-tag {
     position: fixed;
     bottom: 70px;
@@ -469,5 +515,48 @@ style.innerHTML = `
     border-style: solid;
     border-color: #fff transparent transparent transparent;
   }
+
+
+  .pii-tag {
+    position: absolute;
+    top: 50%;
+    left: 0;                          /* attach to the left edge of the button */
+    transform: translate(-100%, -50%); /* shift the bubble fully left, vertically centered */
+    padding: 10px 15px;
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 100000;
+    opacity: 0;
+    animation: fadeInLeft 0.4s forwards;
+  }
+  
+  .pii-tag::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -10px;                  /* place the tail on the right edge */
+    transform: translateY(-50%);
+    border-width: 10px 0 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent transparent #fff;
+  }
+  
+  @keyframes fadeInLeft {
+    0% {
+      opacity: 0;
+      transform: translate(-110%, -50%);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-100%, -50%);
+    }
+  }
+  
+  
 `;
 document.head.appendChild(style);

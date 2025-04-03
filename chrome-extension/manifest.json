@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Prompt Template Assistant (Fixed)",
+  "name": "Prompt Template Assistant Local Testing version",
   "version": "1.0",
-  "description": "Test injection with alert.",
+  "description": "Local Dev",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
