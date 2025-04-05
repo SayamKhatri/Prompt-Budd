@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:8000";
 console.log("Extension injected...");
 
 let debounceTimer;
@@ -6,6 +6,10 @@ let lastScoredPrompt = "";
 let promptHistory = [];
 let scoreHistory = [];
 const MAX_HISTORY = 5;
+
+// Global flags for detection settings
+let scoreDetectionEnabled = true;
+let piiDetectionEnabled = true;
 
 function findActiveTextbox() {
   const box = document.querySelector("#prompt-textarea.ProseMirror");
@@ -40,13 +44,11 @@ function removeScoreTag() {
 
 /* ---------- New: PII Detection Functions ---------- */
 function showPIIPopup() {
-  // If the PII pop-up already exists, do nothing
   if (document.getElementById("pii-tag")) return;
   
   const btn = document.getElementById("smart-suggest-btn");
   if (!btn) return;
   
-  // Ensure the button is the positioning context
   btn.style.position = "relative";
   
   const tag = document.createElement("div");
@@ -54,10 +56,8 @@ function showPIIPopup() {
   tag.className = "pii-tag";
   tag.innerText = "PII Detected!";
   
-  // Append the bubble as a child of the button
   btn.appendChild(tag);
 }
-
 
 function removePIIPopup() {
   const tag = document.getElementById("pii-tag");
@@ -65,6 +65,10 @@ function removePIIPopup() {
 }
 
 function detectPII(prompt) {
+  if (!piiDetectionEnabled) {
+    removePIIPopup();
+    return;
+  }
   fetch(`${BASE_URL}/detect-pii`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -85,6 +89,10 @@ function detectPII(prompt) {
 /* ---------- End PII Detection ---------- */
 
 function scorePrompt(prompt) {
+  if (!scoreDetectionEnabled) {
+    removeScoreTag();
+    return;
+  }
   if (!prompt || prompt.trim() === "") {
     removeScoreTag();
     return;
@@ -156,7 +164,7 @@ function observeInputBox() {
         return;
       }
       scorePrompt(current);
-      detectPII(current); // Trigger PII detection in realtime
+      detectPII(current);
     }, 700);
   });
   observer.observe(box, {
@@ -213,7 +221,7 @@ function truncatePrompt(prompt, maxLength) {
   return prompt.slice(0, maxLength) + "...";
 }
 
-/* ------------------ UI Creation with Side-by-Side Sections ------------------ */
+/* ------------------ Create Vertical Layout for the Panel ------------------ */
 
 function createDropdownPanel() {
   if (document.getElementById("buddy-panel")) return;
@@ -223,43 +231,48 @@ function createDropdownPanel() {
   panel.classList.add("buddy-panel");
   panel.style.display = "none"; // hidden by default
 
-  // Side-by-side layout for Suggested LLM and Score History
+  // Vertical stacking: 3 sections (Suggested LLM, Score History, Settings) in a single column
   panel.innerHTML = `
     <div class="buddy-header">
-      <div class="buddy-title">Prompt Buddy</div>
+      <div class="buddy-title">Prompt Buddy Playground</div>
       <div id="buddy-close-btn" class="buddy-close-btn">✕</div>
     </div>
     <div class="buddy-body">
-      <div class="buddy-row">
-        <div class="buddy-col">
-          <div class="buddy-section" id="section-llm">
-            <button class="buddy-section-toggle" id="toggle-llm">Suggested LLM</button>
-            <div class="buddy-section-content" id="content-llm" style="display: none;">
-              <div id="llm-suggestion-line">
-                <strong>Suggested LLM:</strong> <em>Waiting...</em>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="buddy-col">
-          <div class="buddy-section" id="section-history">
-            <button class="buddy-section-toggle" id="toggle-history">Score History</button>
-            <div class="buddy-section-content" id="content-history" style="display: none;">
-              <ul id="score-history-list" class="buddy-section-list"></ul>
-            </div>
+      <!-- Suggested LLM Section -->
+      <div class="buddy-section" id="section-llm">
+        <button class="buddy-section-toggle" id="toggle-llm">Suggested LLM</button>
+        <div class="buddy-section-content" id="content-llm" style="display: none;">
+          <div id="llm-suggestion-line">
+            <strong>Suggested LLM:</strong> <em>Waiting...</em>
           </div>
         </div>
       </div>
-      <div class="buddy-row">
-        <div class="buddy-col" style="width: 100%;">
-          <div class="buddy-section" id="section-tools">
-            <h4 class="buddy-section-title">Prompt Buddy Tools</h4>
-            <p style="font-size: 13px; margin-bottom: 8px;">
-              Click the <strong>Prompt Buddy</strong> button to auto-suggest a prompt template.
-            </p>
-            <p style="font-size: 12px; color: #555;">
-              (This preserves your existing pop-up feature.)
-            </p>
+
+      <!-- Score History Section -->
+      <div class="buddy-section" id="section-history">
+        <button class="buddy-section-toggle" id="toggle-history">Score History</button>
+        <div class="buddy-section-content" id="content-history" style="display: none;">
+          <ul id="score-history-list" class="buddy-section-list"></ul>
+        </div>
+      </div>
+
+      <!-- Settings Section -->
+      <div class="buddy-section" id="section-settings">
+        <button class="buddy-section-toggle" id="toggle-settings">Settings</button>
+        <div class="buddy-section-content" id="content-settings" style="display: none;">
+          <div class="buddy-switch-row">
+            <label class="buddy-switch">
+              <input type="checkbox" id="toggle-score-detection" checked>
+              <span class="buddy-slider round"></span>
+            </label>
+            <span class="buddy-switch-label">Score Detection</span>
+          </div>
+          <div class="buddy-switch-row">
+            <label class="buddy-switch">
+              <input type="checkbox" id="toggle-pii-detection" checked>
+              <span class="buddy-slider round"></span>
+            </label>
+            <span class="buddy-switch-label">PII Detection</span>
           </div>
         </div>
       </div>
@@ -267,19 +280,37 @@ function createDropdownPanel() {
   `;
   document.body.appendChild(panel);
 
-  // Close panel functionality
+  // Close panel
   document.getElementById("buddy-close-btn").addEventListener("click", () => {
     panel.style.display = "none";
   });
 
-  // Toggle section functionality
+  // Collapsible toggles
   document.getElementById("toggle-llm").addEventListener("click", () => {
     const contentLLM = document.getElementById("content-llm");
-    contentLLM.style.display = contentLLM.style.display === "none" ? "block" : "none";
+    contentLLM.style.display = (contentLLM.style.display === "none") ? "block" : "none";
   });
   document.getElementById("toggle-history").addEventListener("click", () => {
     const contentHistory = document.getElementById("content-history");
-    contentHistory.style.display = contentHistory.style.display === "none" ? "block" : "none";
+    contentHistory.style.display = (contentHistory.style.display === "none") ? "block" : "none";
+  });
+  document.getElementById("toggle-settings").addEventListener("click", () => {
+    const contentSettings = document.getElementById("content-settings");
+    contentSettings.style.display = (contentSettings.style.display === "none") ? "block" : "none";
+  });
+
+  // Attach toggles
+  document.getElementById("toggle-score-detection").addEventListener("change", function(){
+    scoreDetectionEnabled = this.checked;
+    if (!scoreDetectionEnabled) {
+      removeScoreTag();
+    }
+  });
+  document.getElementById("toggle-pii-detection").addEventListener("change", function(){
+    piiDetectionEnabled = this.checked;
+    if (!piiDetectionEnabled) {
+      removePIIPopup();
+    }
   });
 }
 
@@ -289,9 +320,7 @@ function toggleDropdownPanel() {
   panel.style.display = panel.style.display === "none" ? "block" : "none";
 }
 
-/* 
-  Floating button container for the rectangular "Prompt Buddy" button and its kebab menu.
-*/
+/* ------------------ Floating Button & Kebab ------------------ */
 function createFloatingButton() {
   if (document.getElementById("prompt-buddy-container")) return;
 
@@ -346,6 +375,7 @@ function createFloatingButton() {
   document.body.appendChild(container);
 }
 
+/* ------------------ Initialization & Re-injection ------------------ */
 window.addEventListener("load", () => {
   setTimeout(() => {
     const box = findActiveTextbox();
@@ -360,7 +390,34 @@ window.addEventListener("load", () => {
   }, 3000);
 });
 
-/* ------------------ CSS Injection for a Modern Teal Theme & Stylish Pop-ups ------------------ */
+// let currentURL = window.location.href;
+// setInterval(() => {
+//   if (window.location.href !== currentURL) {
+//     currentURL = window.location.href;
+//     // Remove existing UI
+//     const container = document.getElementById("prompt-buddy-container");
+//     if (container) container.remove();
+//     const panel = document.getElementById("buddy-panel");
+//     if (panel) panel.remove();
+//     removeScoreTag();
+//     removePIIPopup();
+//     // Reset state
+//     lastScoredPrompt = "";
+//     promptHistory = [];
+//     scoreHistory = [];
+//     // Re-initialize after a short delay
+//     setTimeout(() => {
+//       if (findActiveTextbox()) {
+//         createFloatingButton();
+//         createDropdownPanel();
+//         observeInputBox();
+//         updateScoreHistoryUI();
+//       }
+//     }, 3000);
+//   }
+// }, 1000);
+
+/* ------------------ Inject CSS for a Vertical "Card" Layout ------------------ */
 const style = document.createElement("style");
 style.innerHTML = `
   /* Floating Prompt Buddy Container */
@@ -397,12 +454,12 @@ style.innerHTML = `
     display: inline-block;
   }
 
-  /* Buddy Panel Styles */
+  /* Buddy Panel: narrower for a vertical card-like UI */
   .buddy-panel {
     position: fixed;
     bottom: 100px;
     right: 20px;
-    width: 500px;
+    width: 350px; /* narrower card style */
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -416,39 +473,31 @@ style.innerHTML = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
+    padding: 14px 16px;
     background: linear-gradient(45deg, #2ecc71, #27ae60);
     color: #fff;
   }
   .buddy-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
   }
   .buddy-close-btn {
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
   }
   .buddy-body {
-    padding: 16px;
+    padding: 14px;
     background-color: #fafafa;
   }
-  .buddy-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-  .buddy-col {
-    flex: 1;
-    min-width: 0;
-  }
+
+  /* Each buddy-section is stacked vertically */
   .buddy-section {
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-bottom: 0;
+    margin-bottom: 12px;
   }
   .buddy-section-toggle {
     width: 100%;
@@ -456,10 +505,10 @@ style.innerHTML = `
     border: none;
     color: #fff;
     padding: 10px;
-    font-size: 15px;
+    font-size: 14px;
     border-radius: 6px;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     transition: background-color 0.3s;
   }
   .buddy-section-toggle:hover {
@@ -471,13 +520,8 @@ style.innerHTML = `
     margin-top: 8px;
     border: 1px solid #eee;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     color: #444;
-  }
-  .buddy-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
   }
   .buddy-section-list {
     list-style-type: none;
@@ -485,7 +529,7 @@ style.innerHTML = `
     margin: 0;
   }
 
-  /* Stylish Score Pop-up as a Chat Notification (Top Right) */
+  /* Score Pop-up (top-right bubble) */
   .score-tag {
     position: fixed;
     bottom: 70px;
@@ -516,12 +560,12 @@ style.innerHTML = `
     border-color: #fff transparent transparent transparent;
   }
 
-
+  /* PII Pop-up (attached to left of the button) */
   .pii-tag {
     position: absolute;
     top: 50%;
-    left: 0;                          /* attach to the left edge of the button */
-    transform: translate(-100%, -50%); /* shift the bubble fully left, vertically centered */
+    left: 0;
+    transform: translate(-100%, -50%);
     padding: 10px 15px;
     background-color: #fff;
     color: #333;
@@ -534,18 +578,16 @@ style.innerHTML = `
     opacity: 0;
     animation: fadeInLeft 0.4s forwards;
   }
-  
   .pii-tag::after {
     content: "";
     position: absolute;
     top: 50%;
-    right: -10px;                  /* place the tail on the right edge */
+    right: -10px;
     transform: translateY(-50%);
     border-width: 10px 0 10px 10px;
     border-style: solid;
     border-color: transparent transparent transparent #fff;
   }
-  
   @keyframes fadeInLeft {
     0% {
       opacity: 0;
@@ -556,7 +598,54 @@ style.innerHTML = `
       transform: translate(-100%, -50%);
     }
   }
-  
-  
+
+  /* Toggle Switch (iOS style) */
+  .buddy-switch-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .buddy-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+  }
+  .buddy-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .buddy-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 22px;
+  }
+  .buddy-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px; width: 16px;
+    left: 3px; bottom: 3px;
+    background-color: #fff;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .buddy-slider {
+    background-color: #27ae60;
+  }
+  input:focus + .buddy-slider {
+    box-shadow: 0 0 1px #27ae60;
+  }
+  input:checked + .buddy-slider:before {
+    transform: translateX(18px);
+  }
+  .buddy-switch-label {
+    margin-left: 8px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
 `;
 document.head.appendChild(style);

@@ -4,3 +4,4 @@ fastapi
 pydantic
 uvicorn
 google-genai
+groq
