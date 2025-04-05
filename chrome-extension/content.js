@@ -12,14 +12,38 @@ let scoreDetectionEnabled = true;
 let piiDetectionEnabled = true;
 let promptType = "short";  // "short" or "descriptive"
 
+/**
+ * Try site‑specific selectors first, then
+ * fall back to any visible textarea or contenteditable.
+ */
 function findActiveTextbox() {
-  const box = document.querySelector("#prompt-textarea.ProseMirror");
-  if (box && box.offsetParent !== null && box.isContentEditable) {
-    return box;
-  }
-  return null;
-}
+  const host = window.location.hostname;
+  let box = null;
 
+  if (host.includes("chat.openai.com")) {
+    // ChatGPT
+    box = document.querySelector("#prompt-textarea.ProseMirror");
+  }
+  else if (host.includes("deepseek.ai")) {
+    // DeepSeek
+    box = document.querySelector("textarea#chat-input");
+  }
+  else if (host.includes("perplexity.ai")) {
+    // (example) Perplexity — adjust to the real selector
+    box = document.querySelector("textarea.query-input");
+  }
+
+  // Fallback: first visible <textarea> or [contenteditable="true"]
+  if (!box) {
+    const candidates = [
+      ...document.querySelectorAll("textarea"),
+      ...document.querySelectorAll("[contenteditable='true']")
+    ];
+    box = candidates.find(el => el.offsetParent !== null) || null;
+  }
+
+  return (box && box.offsetParent !== null) ? box : null;
+}
 /* ------------------ Horizontal Pipe Score Meter Popup (Top, attached to icon) ------------------ */
 
 /**
@@ -210,13 +234,22 @@ function checkAndUpdateLLMSuggestion() {
 }
 
 /* ------------------ Observer Function ------------------ */
+/* ——— tweak to your observer so it works for both <textarea> and contenteditable ——— */
 function observeInputBox() {
   const box = findActiveTextbox();
-  if (!box) return;
-  const observer = new MutationObserver(() => {
+  if (!box) {
+    console.log("❌ No input box found.");
+    return;
+  }
+
+  const isTextarea = box.tagName === "TEXTAREA";
+  const getText    = () => isTextarea ? box.value : box.innerText;
+
+  // Debounced change handler
+  const handleChange = () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      const current = box.innerText.trim();
+      const current = getText().trim();
       if (!current) {
         removeScorePipePopup();
         removePIIPopup();
@@ -225,27 +258,42 @@ function observeInputBox() {
       scorePrompt(current);
       detectPII(current);
     }, 700);
-  });
-  observer.observe(box, {
-    characterData: true,
-    childList: true,
-    subtree: true,
-  });
+  };
+
+  // Listen for edits
+  if (isTextarea) {
+    box.addEventListener("input", handleChange);
+  } else {
+    const observer = new MutationObserver(handleChange);
+    observer.observe(box, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  // On Enter: hide popups and record history
   box.addEventListener("keydown", (event) => {
-    const isEnter = event.key === "Enter";
-    const plainEnter = !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
-    if (isEnter && plainEnter) {
-      setTimeout(() => {
-        const submitted = lastScoredPrompt;
-        if (!submitted) return;
-        if (!promptHistory.length || promptHistory[0] !== submitted) {
-          promptHistory.unshift(submitted);
-          if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
-          checkAndUpdateLLMSuggestion();
-        }
-      }, 300);
-    }
+    const isEnter    = event.key === "Enter";
+    const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
+    if (!plainEnter) return;
+
+    // ** Hide the popups immediately **
+    removeScorePipePopup();
+    removePIIPopup();
+
+    // Then record to history & trigger LLM suggestion
+    setTimeout(() => {
+      const submitted = lastScoredPrompt;
+      if (!submitted) return;
+      if (!promptHistory.length || promptHistory[0] !== submitted) {
+        promptHistory.unshift(submitted);
+        if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
+        checkAndUpdateLLMSuggestion();
+      }
+    }, 300);
   });
+
   console.log("👁️ Observer & Enter key capture initialized");
 }
 
@@ -504,40 +552,72 @@ function createFloatingButton() {
     kebabContainer.style.opacity = "0";
   });
   
+  /* ------------------ Floating Button Icon Click (updated) ------------------ */
+
   imgBtn.addEventListener("click", () => {
     const inputBox = findActiveTextbox();
     if (!inputBox) {
       alert("Couldn't find textbox.");
       return;
     }
-    const originalPrompt = inputBox.innerText.trim();
-    if (!originalPrompt) {
-      alert("⚠️ Please type something into ChatGPT first.");
+  
+    const tag = inputBox.tagName;
+    const isInputLike = tag === "INPUT" || tag === "TEXTAREA";
+    const isEditable  = inputBox.isContentEditable;
+    const original = isInputLike
+      ? inputBox.value.trim()
+      : inputBox.innerText.trim();
+  
+    if (!original) {
+      alert("⚠️ Please type something into the box first.");
       return;
     }
-    const endpoint = (promptType === "descriptive")
+  
+    const endpoint = promptType === "descriptive"
       ? `${BASE_URL}/suggest-templates-descriptive`
       : `${BASE_URL}/suggest-templates`;
+  
     fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: originalPrompt })
+      body: JSON.stringify({ prompt: original })
     })
-      .then((res) => res.json())
-      .then((data) => {
-        const suggestions = data.templates || [];
-        if (suggestions.length > 0) {
-          const newPrompt = suggestions;
-          inputBox.innerText = newPrompt;
-          inputBox.focus();
-          removeScorePipePopup();
-          scorePrompt(newPrompt);
+      .then(res => res.json())
+      .then(data => {
+        const templates = data.templates || [];
+        if (!templates.length) return;
+        const newPrompt = Array.isArray(templates)
+          ? templates.join("\n\n")
+          : templates;
+  
+        if (isInputLike) {
+          // use the native setter on either INPUT or TEXTAREA
+          const proto = tag === "TEXTAREA"
+            ? window.HTMLTextAreaElement.prototype
+            : window.HTMLInputElement.prototype;
+          const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+          setter.call(inputBox, newPrompt);
+          // notify React
+          inputBox.dispatchEvent(new Event("input",  { bubbles: true }));
+          inputBox.dispatchEvent(new Event("change", { bubbles: true }));
         }
+        else if (isEditable) {
+          // contenteditable case
+          inputBox.innerText = newPrompt;
+          inputBox.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        }
+        else {
+          console.warn("Unknown box type, can't set value:", inputBox);
+        }
+  
+        inputBox.focus();
+        removeScorePipePopup();
+        scorePrompt(newPrompt);
       })
-      .catch((err) => {
-        console.error("Error fetching prompt suggestion:", err);
-      });
+      .catch(err => console.error("Error fetching prompt suggestion:", err));
   });
+  
+  
   
   document.body.appendChild(container);
 }
