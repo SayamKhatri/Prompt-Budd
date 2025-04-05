@@ -468,34 +468,44 @@ function toggleDropdownPanel() {
   panel.style.display = isHidden ? "block" : "none";
 
   if (isHidden) {
-    // Now that it's visible, measure and position relative to the icon
+    // Wait one tick so the panel has a size, then position it
+    // and start listening for zoom/resize events
     setTimeout(() => {
-      const icon = document.getElementById("smart-suggest-img");
-      if (!icon) return;
-
-      const iconRect = icon.getBoundingClientRect();
-      const panelWidth = panel.offsetWidth;
-      const panelHeight = panel.offsetHeight;
-      const gap = 10;
-
-      // By default, place the panel below the icon
-      let left = iconRect.left; 
-      let top = iconRect.bottom + gap;
-
-      // If going off screen to the right, clamp
-      if (left + panelWidth > window.innerWidth - 10) {
-        left = window.innerWidth - panelWidth - 10;
-      }
-      // If going off screen at the bottom, place it above the icon instead
-      if (top + panelHeight > window.innerHeight - 10) {
-        top = iconRect.top - panelHeight - gap;
-      }
-
-      panel.style.position = "fixed";
-      panel.style.left = left + "px";
-      panel.style.top = top + "px";
+      repositionBuddyPanel();
+      window.addEventListener("resize", repositionBuddyPanel);
     }, 0);
+  } else {
+    // Panel is being hidden – stop listening to window resize events
+    window.removeEventListener("resize", repositionBuddyPanel);
   }
+}
+
+/* ---------- keep Buddy‑panel glued to the icon on resize / zoom ---------- */
+function repositionBuddyPanel() {
+  const panel = document.getElementById("buddy-panel");
+  const icon  = document.getElementById("smart-suggest-img");
+  if (!panel || !icon || panel.style.display === "none") return;   // nothing to do
+
+  const gap         = 10;
+  const iconRect    = icon.getBoundingClientRect();
+  const panelWidth  = panel.offsetWidth;
+  const panelHeight = panel.offsetHeight;
+
+  // default: below the icon
+  let left = iconRect.left;
+  let top  = iconRect.bottom + gap;
+
+  // clamp so it never leaves the screen
+  if (left + panelWidth > window.innerWidth - 10) {
+    left = window.innerWidth - panelWidth - 10;
+  }
+  if (top + panelHeight > window.innerHeight - 10) {
+    top = iconRect.top - panelHeight - gap;   // put it above instead
+  }
+
+  panel.style.position = "fixed";
+  panel.style.left  = `${left}px`;
+  panel.style.top   = `${top}px`;
 }
 
 
