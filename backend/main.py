@@ -46,3 +46,8 @@ async def suggest_llm_model(request: PromptListRequest):
 async def detect_pii_route(request: PiiRequest):
     found = contains_pii(request.text)
     return {"pii": found}
+
+@app.post("/suggest-templates-descriptive")
+async def suggest_templates(request: PromptRequest):
+    suggestions = enhance_prompt_with_groq(request.prompt)
+    return {"templates": suggestions}
