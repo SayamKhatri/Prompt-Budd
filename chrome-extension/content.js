@@ -357,9 +357,27 @@ function createDropdownPanel() {
     <div class="buddy-header">
       <div class="buddy-title">Prompt Buddy Playground</div>
       <div class="header-icons">
-        <div id="buddy-gear-btn" class="buddy-gear-btn" title="Settings">⚙️</div>
-        <div id="buddy-close-btn" class="buddy-close-btn" title="Close">✕</div>
+      <button id="buddy-gear-btn" class="buddy-gear-btn" title="Settings">
+        <!-- nicer SVG gear -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm7.4-3.5
+                   a5.9 5.9 0 0 1-.2 1.5l2.1 1.6-1.5 2.6-2.5-1
+                   a6.2 6.2 0 0 1-1.3.8l-.4 2.7h-3l-.4-2.7
+                   a6.2 6.2 0 0 1-1.3-.8l-2.5 1-1.5-2.6
+                   2.1-1.6a5.9 5.9 0 0 1-.2-1.5 5.9 5.9 0 0 1
+                   .2-1.5L4.8 8.9l1.5-2.6 2.5 1c.4-.3.9-.5
+                   1.3-.8l.4-2.7h3l.4 2.7c.4.2.9.5 1.3.8l2.5-1
+                   1.5 2.6-2.1 1.6c.1.5.2 1 .2 1.5z"/>
+        </svg>
+      </button>
+      <button id="buddy-close-btn" class="buddy-close-btn" title="Close">
+        <!-- simple SVG “X” -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
       </div>
+    
     </div>
     <div class="buddy-tabs">
       <button class="buddy-tab active-tab" id="tab-llm">Suggested LLM</button>
@@ -639,282 +657,199 @@ window.addEventListener("load", () => {
   }, 3000);
 });
 
+
 /* ------------------ Inject CSS ------------------ */
 const style = document.createElement("style");
 style.innerHTML = `
   /* Floating Container for Icon & Kebab */
   #prompt-buddy-container {
     position: fixed;
-    bottom: 20px;
-    right: 0px; /* stick to right edge */
-    width: 56px;
-    height: 56px;
+    bottom: 20px; right: 0;
+    width: 56px; height: 56px;
     overflow: hidden;
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    transition: width 0.3s ease;
+    display: flex; align-items: center;
+    transition: width .3s ease;
     z-index: 99999;
     background: transparent;
   }
   #prompt-buddy-container:hover {
-    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
   }
-  
-  /* Icon Image */
   #smart-suggest-img {
-    width: 56px;
-    height: 56px;
+    width: 56px; height: 56px;
     border-radius: 8px;
-    display: block;
-    flex-shrink: 0;
     cursor: pointer;
   }
-  
-  /* Kebab Container */
   #kebab-container {
-    width: 24px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(180deg, #333 0%, #111 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    flex-shrink: 0;
+    width: 24px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f0f0f0;
+    opacity: 0; transition: opacity .3s;
   }
-  
-  /* Kebab Button */
+  #prompt-buddy-container:hover #kebab-container {
+    opacity: 1;
+  }
   #kebab-menu-btn {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: transparent;
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
+    width:100%; height:100%;
+    background:transparent; border:none;
+    cursor:pointer; color:#555; font-size:18px;
   }
-  
-  /* Buddy Panel */
+
+  /* ==== Light Theme with Indigo/Teal Accent ==== */
   .buddy-panel {
     position: fixed;
-    bottom: 100px;
-    right: 20px;
+    bottom: 100px; right: 20px;
     width: 380px;
-    background-color: #fdfdfd;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
-    color: #333;
+    color: #333333;
     z-index: 99999;
-    overflow: hidden;
+    /* ← ALLOW overflow so header icons don’t get clipped */
+    overflow: visible;
   }
   .buddy-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(45deg, #8E2DE2, #FF62A5);
-    color: #fff;
-    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(90deg, #4c6ef5, #15aabf);
+    /* extra right padding so icons sit inside the corner */
+    padding: 12px 32px 12px 16px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    /* ensure header children can overflow */
+    overflow: visible;
   }
   .buddy-title {
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 16px; font-weight: 600; color: #ffffff;
   }
   .header-icons {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .buddy-gear-btn {
-    cursor: pointer;
-    font-size: 16px;
+  .header-icons > * {
+    background: transparent; border: none; padding: 4px;
+    cursor: pointer; color: rgba(255,255,255,0.8);
+    transition: color .2s;
   }
-  .buddy-close-btn {
-    cursor: pointer;
-    font-size: 18px;
+  .header-icons > *:hover {
+    color: #ffffff;
   }
-  .buddy-body {
-    padding: 14px;
-    background-color: #fafafa;
+  /* gear SVG fill */
+  .buddy-gear-btn svg {
+    width: 20px; height: 20px;
+    fill: currentColor;
+    transition: fill .2s;
   }
-  /* Buddy Tabs */
+  /* close SVG stroke */
+  .buddy-close-btn svg {
+    width: 20px; height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    transition: stroke .2s;
+  }
+  .buddy-gear-btn:hover svg,
+  .buddy-close-btn:hover svg {
+    color: #ffffff;
+  }
+
+  /* Tabs */
   .buddy-tabs {
-    display: flex;
-    border-bottom: 1px solid #ddd;
+    display: flex; background: #f1f3f5; border-bottom: 1px solid #e2e8f0;
   }
   .buddy-tab {
-    flex: 1;
-    padding: 10px;
-    background: linear-gradient(45deg, #8E2DE2, #FF62A5);
-    border: none;
-    color: #fff;
-    font-size: 14px;
-    cursor: pointer;
-    transition: opacity 0.3s;
+    flex: 1; padding: 10px; background: transparent; border: none;
+    color: #555555; font-weight: 500; cursor: pointer;
+    transition: color .2s;
   }
   .buddy-tab:hover {
-    opacity: 0.9;
+    color: #4c6ef5;
   }
   .active-tab {
-    background: #fff;
-    color: #333;
-    border-bottom: 2px solid #8E2DE2;
+    color: #4c6ef5; border-bottom: 3px solid #15aabf;
   }
+
+  /* Content area */
   .buddy-content {
-    padding: 12px;
+    padding: 12px; background: #ffffff;
+    max-height: 300px; overflow-y: auto;
   }
-  /* Buddy Section for Settings */
-  .buddy-section {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-top: 12px;
+  .buddy-content > div { display: none; }
+  .buddy-content > .visible { display: block; }
+
+  /* Score History List */
+  #score-history-list {
+    list-style: none; margin: 0; padding: 0;
   }
-  .buddy-switch-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
+  #score-history-list li {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
   }
-  .buddy-switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 22px;
+  .prompt-text {
+    font-size: 13px; color: #555555;
+    flex: 1; margin-right: 8px;
   }
-  .buddy-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+  .copy-icon {
+    width: 20px; height: 20px;
+    fill: #4c6ef5; cursor: pointer;
+    transition: fill .2s;
   }
-  .buddy-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 22px;
+  .copy-icon:hover {
+    fill: #15aabf;
   }
-  .buddy-slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 3px;
-    bottom: 3px;
-    background-color: #fff;
-    transition: .4s;
-    border-radius: 50%;
-  }
-  input:checked + .buddy-slider {
-    background-color: #27ae60;
-  }
-  input:focus + .buddy-slider {
-    box-shadow: 0 0 1px #27ae60;
-  }
-  input:checked + .buddy-slider:before {
-    transform: translateX(18px);
-  }
-  .buddy-switch-label {
-    margin-left: 8px;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-  
-  /* Horizontal Pipe Score Meter Popup (attached to icon) */
+
+  /* ---- Restored Score‑Pipe Popup & Meter Styles ---- */
   #score-pipe-popup {
-    position: fixed;
-    width: 240px;
-    padding: 12px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    font-family: 'Roboto', sans-serif;
-    color: #333;
-    z-index: 99999;
-    opacity: 0;
-    transform: translateY(10px);
-    animation: pipePopupFadeIn 0.4s forwards;
+    position: fixed; width: 240px; padding: 12px;
+    background: #ffffff; border: 1px solid #e2e8f0;
+    border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    font-family: 'Roboto', sans-serif; color: #333333;
+    z-index: 99999; opacity: 0; transform: translateY(10px);
+    animation: pipePopupFadeIn 0.3s forwards;
   }
   @keyframes pipePopupFadeIn {
     to { opacity: 1; transform: translateY(0); }
   }
   .pipe-popup-title {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 6px;
-    text-align: center;
+    font-size: 14px; font-weight: bold;
+    margin-bottom: 8px; text-align: center;
   }
   .pipe-popup-meter {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    margin-bottom: 6px;
+    display: flex; justify-content: center;
+    margin-bottom: 8px;
   }
   .pipe-segment {
-    width: 12px;
-    height: 20px;
-    border-radius: 4px;
-    background-color: #ddd;
-    margin-right: 4px;
+    width: 12px; height: 20px; border-radius: 4px;
+    background-color: #e2e8f0; margin: 0 2px;
     transition: background-color 0.3s;
   }
   .pipe-popup-legend {
-    font-size: 12px;
-    color: #666;
+    font-size: 12px; color: #666666;
     text-align: center;
   }
-  
-  /* Mini Pipe Meter for Score History */
-  .mini-pipe-meter {
-    display: flex;
-    flex-direction: row;
-    margin-top: 4px;
-  }
+
+  /* Mini‑meter for history */
+  .mini-pipe-meter { display: flex; }
   .mini-segment {
-    width: 8px;
-    height: 14px;
-    border-radius: 3px;
-    background-color: #ddd;
-    margin-right: 3px;
-    transition: background-color 0.3s;
+    width: 8px; height: 14px; border-radius: 3px;
+    background-color: #e2e8f0; margin-right: 3px;
   }
-  
-  /* PII Popup */
+
+  /* PII Tag */
   .pii-tag {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(-100%, -50%);
-    padding: 10px 15px;
-    background-color: #fff;
-    color: #333;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    z-index: 100000;
-    opacity: 0;
-    animation: fadeInLeft 0.4s forwards;
-  }
-  .pii-tag::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    right: -10px;
-    transform: translateY(-50%);
-    border-width: 10px 0 10px 10px;
-    border-style: solid;
-    border-color: transparent transparent transparent #fff;
+    position: absolute; top: 50%; left: 0;
+    transform: translate(-100%,-50%);
+    padding: 8px 12px; background: #ffffff;
+    border: 1px solid #e2e8f0; border-radius: 6px;
+    color: #333333; font-size: 13px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    opacity: 0; animation: fadeInLeft 0.3s forwards;
   }
   @keyframes fadeInLeft {
-    0% { opacity: 0; transform: translate(-110%, -50%); }
-    100% { opacity: 1; transform: translate(-100%, -50%); }
+    to { opacity: 1; transform: translate(-100%,-50%); }
   }
 `;
 document.head.appendChild(style);
