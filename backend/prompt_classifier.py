@@ -71,13 +71,3 @@ def classify_llm_for_prompts(prompts: List[str]) -> Dict[str, str]:
             "reason": str(e)
         }
 
-
-if __name__ == "__main__":
-    recent_prompts = [
-        "I have this python script, can you tell me the error",
-        "It is still not working, how to make this better",
-        "How to deploy this"
-    ]
-    
-    result = classify_llm_for_prompts(recent_prompts)
-    print(result)

@@ -30,8 +30,3 @@ def rate_prompt_quality(prompt: str) -> str:
     except Exception as e:
         print("Error from Gemini:", e)
         return "unknown"
-
-print(rate_prompt_quality('''
-                            
-                          propose  project ideas in genai
-                          '''))

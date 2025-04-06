@@ -6,8 +6,8 @@ let lastScoredPrompt = "";
 let promptHistory = [];
 let scoreHistory = [];
 const MAX_HISTORY = 5;
-let activeView         = "llm";   // "llm" | "history" | "settings"
-let viewBeforeSettings = "llm";   // remembers the tab to restore
+let activeView         = "llm";   
+let viewBeforeSettings = "llm";   
 let currentTextbox = null;
 
 
@@ -16,10 +16,7 @@ let scoreDetectionEnabled = true;
 let piiDetectionEnabled = true;
 let promptType = "short";  // "short" or "descriptive"
 
-/**
- * Try site‑specific selectors first, then
- * fall back to any visible textarea or contenteditable.
- */
+
 function findActiveTextbox() {
   const host = window.location.hostname;
   let box = null;
