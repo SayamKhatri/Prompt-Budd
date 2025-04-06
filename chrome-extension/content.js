@@ -8,6 +8,7 @@ let scoreHistory = [];
 const MAX_HISTORY = 5;
 let activeView         = "llm";   // "llm" | "history" | "settings"
 let viewBeforeSettings = "llm";   // remembers the tab to restore
+let currentTextbox = null;
 
 
 // Global flags for detection settings and prompt type
@@ -250,7 +251,7 @@ function observeInputBox() {
     console.log("❌ No input box found.");
     return;
   }
-
+  currentTextbox = box;
   const isTextarea = box.tagName === "TEXTAREA";
   const getText    = () => isTextarea ? box.value : box.innerText;
 
@@ -306,6 +307,23 @@ function observeInputBox() {
   console.log("👁️ Observer & Enter key capture initialized");
 }
 
+function checkForNewTextbox() {
+  const newBox = findActiveTextbox();
+  if (newBox && newBox !== currentTextbox) {
+    // Clear popups from the previous screen
+    removeScorePipePopup();
+    removePIIPopup();
+
+    // Optionally, if you stored any MutationObserver from the previous box,
+    // disconnect it here (not shown in the original code).
+
+    // Update the global variable
+    currentTextbox = newBox;
+    
+    // Reattach the observer on the new active textbox
+    observeInputBox();
+  }
+}
 /* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
 function updateScoreHistoryUI() {
   const historyList = document.getElementById("score-history-list");
@@ -686,6 +704,7 @@ function createFloatingButton() {
     kebabContainer.style.opacity = "0";
   });
   
+
   /* ------------------ Floating Button Icon Click (updated) ------------------ */
 
   imgBtn.addEventListener("click", () => {
@@ -771,6 +790,8 @@ window.addEventListener("load", () => {
       console.log("❌ No input box found.");
     }
   }, 3000);
+  // Start checking for a new active textbox every 1 second
+  setInterval(checkForNewTextbox, 1000);
 });
 
 
