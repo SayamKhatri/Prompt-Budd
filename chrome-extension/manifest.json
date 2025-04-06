@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Prompt Template Assistant Local Testing version",
+  "name": "PromptBud",
   "version": "1.0",
   "description": "Local Dev",
   "permissions": ["activeTab", "scripting"],
