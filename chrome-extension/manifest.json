@@ -10,7 +10,10 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/logo.png"],
+      "resources": [
+        "icons/logo.png",
+        "icons/logo_red.png"
+      ],
       "matches": ["<all_urls>"]
     }
   ],

@@ -137,17 +137,23 @@ function showPIIPopup() {
   const imgBtn = document.getElementById("smart-suggest-img");
   if (!imgBtn) return;
   imgBtn.style.position = "relative";
-  const tag = document.createElement("div");
-  tag.id = "pii-tag";
-  tag.className = "pii-tag";
-  tag.innerText = "PII Detected!";
-  imgBtn.appendChild(tag);
+  // Change the logo to the red version
+  imgBtn.src = chrome.runtime.getURL("icons/logo_red.png");
+  // Add an animation class for a pulse effect
+  imgBtn.classList.add("logo-red-animate");
 }
 
+
+
 function removePIIPopup() {
-  const tag = document.getElementById("pii-tag");
-  if (tag) tag.remove();
+  const imgBtn = document.getElementById("smart-suggest-img");
+  if (!imgBtn) return;
+  // Revert to the default logo
+  imgBtn.src = chrome.runtime.getURL("icons/logo.png");
+  // Remove the animation class
+  imgBtn.classList.remove("logo-red-animate");
 }
+
 
 function detectPII(prompt) {
   if (!piiDetectionEnabled) {
@@ -428,8 +434,8 @@ function createDropdownPanel() {
     <div class="setting-row">
       <span class="setting-label">Type</span>
       <div class="radio‑group">
-        <label><input type="radio" name="promptType" value="short" checked> Short</label>
-        <label><input type="radio" name="promptType" value="descriptive"> Descriptive</label>
+        <label><input type="radio" name="promptType" value="short" checked> Short </label>
+        <label><input type="radio" name="promptType" value="descriptive"> Descriptive </label>
       </div>
     </div>
   
@@ -858,6 +864,34 @@ style.innerHTML = `
   border-radius:50%;
   margin-left:8px;          
 }
+
+
+#smart-suggest-img {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Define the pulse animation */
+@keyframes logoRedPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Apply the pulse animation when PII is detected */
+.logo-red-animate {
+  animation: logoRedPulse 0.5s ease-in-out;
+}
+
+
 
 /* END BUDDY CSS --------------------------------------------------------- */
 
