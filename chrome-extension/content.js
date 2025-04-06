@@ -6,6 +6,9 @@ let lastScoredPrompt = "";
 let promptHistory = [];
 let scoreHistory = [];
 const MAX_HISTORY = 5;
+let activeView         = "llm";   // "llm" | "history" | "settings"
+let viewBeforeSettings = "llm";   // remembers the tab to restore
+
 
 // Global flags for detection settings and prompt type
 let scoreDetectionEnabled = true;
@@ -358,8 +361,7 @@ function createDropdownPanel() {
       <div class="buddy-title">Prompt Buddy Playground</div>
       <div class="header-icons">
       <button id="buddy-gear-btn" class="buddy-gear-btn" title="Settings">
-        <!-- nicer SVG gear -->
-        <svg viewBox="0 0 24 24" fill="currentColor">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="overflow:visible">
           <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm7.4-3.5
                    a5.9 5.9 0 0 1-.2 1.5l2.1 1.6-1.5 2.6-2.5-1
                    a6.2 6.2 0 0 1-1.3.8l-.4 2.7h-3l-.4-2.7
@@ -371,8 +373,7 @@ function createDropdownPanel() {
         </svg>
       </button>
       <button id="buddy-close-btn" class="buddy-close-btn" title="Close">
-        <!-- simple SVG “X” -->
-        <svg viewBox="0 0 24 24" fill="currentColor">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="overflow:visible">
           <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
       </button>
@@ -393,57 +394,132 @@ function createDropdownPanel() {
         <ul id="score-history-list" class="buddy-section-list"></ul>
       </div>
     </div>
-    <div class="buddy-section" id="section-settings" style="display: none;">
-      <div class="buddy-switch-row">
-        <label class="buddy-switch">
-          <input type="checkbox" id="toggle-score-detection" checked>
-          <span class="buddy-slider round"></span>
-        </label>
-        <span class="buddy-switch-label">Score Detection</span>
-      </div>
-      <div class="buddy-switch-row">
-        <label class="buddy-switch">
-          <input type="checkbox" id="toggle-pii-detection" checked>
-          <span class="buddy-slider round"></span>
-        </label>
-        <span class="buddy-switch-label">PII Detection</span>
-      </div>
-      <div class="buddy-switch-row" style="margin-top:10px;">
-        <span class="buddy-switch-label" style="font-weight:bold;">Prompt Type:</span>
-        <label style="margin-left: 10px;">
-          <input type="radio" name="promptType" value="short" checked> Short
-        </label>
-        <label style="margin-left: 10px;">
-          <input type="radio" name="promptType" value="descriptive"> Descriptive
-        </label>
+    <div class="buddy-section" id="section-settings" style="display:none;">
+    <h4 class="settings-heading">Features</h4>
+  
+    <div class="setting-row">
+      <span class="setting-label">Score detection</span>
+      <label class="switch">
+        <input type="checkbox" id="toggle-score-detection" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  
+    <div class="setting-row">
+      <span class="setting-label">PII detection</span>
+      <label class="switch">
+        <input type="checkbox" id="toggle-pii-detection" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  
+    <h4 class="settings-heading">Prompt Style</h4>
+  
+    <div class="setting-row">
+      <span class="setting-label">Type</span>
+      <div class="radio‑group">
+        <label><input type="radio" name="promptType" value="short" checked> Short</label>
+        <label><input type="radio" name="promptType" value="descriptive"> Descriptive</label>
       </div>
     </div>
+  
+    <h4 class="settings-heading">Theme</h4>
+  
+    <div class="setting-row">
+      <span class="setting-label">Colour Scheme</span>
+      <div class="radio‑group">
+        <label><input type="radio" name="themeChoice" value="theme-default" checked> Blue (default)</label>
+        <label><input type="radio" name="themeChoice" value="theme-purple"> Purple</label>
+        <label><input type="radio" name="themeChoice" value="theme-charcoal"> Charcoal</label>
+      </div>
+    </div>
+  </div>
+  
   `;
   document.body.appendChild(panel);
   document.getElementById("buddy-close-btn").addEventListener("click", () => {
     panel.style.display = "none";
   });
+
   document.getElementById("buddy-gear-btn").addEventListener("click", () => {
-    const settings = document.getElementById("section-settings");
-    settings.style.display = (settings.style.display === "none") ? "block" : "none";
+    const settings       = document.getElementById("section-settings");
+    const contentLLM     = document.getElementById("content-llm");
+    const contentHistory = document.getElementById("content-history");
+    const tabLLM         = document.getElementById("tab-llm");
+    const tabHistory     = document.getElementById("tab-history");
+  
+    if (activeView === "settings") {
+      /* Close settings → restore previous tab */
+      settings.style.display = "none";
+      document.getElementById("buddy-content").style.display = "block";
+      document.querySelector(".buddy-tabs").style.display     = "flex";
+  
+      if (viewBeforeSettings === "history") {
+        contentHistory.style.display = "block";
+        tabHistory.classList.add("active-tab");
+        contentLLM.style.display = "none";
+        tabLLM.classList.remove("active-tab");
+        activeView = "history";
+      } else {                              // default back to LLM
+        contentLLM.style.display = "block";
+        tabLLM.classList.add("active-tab");
+        contentHistory.style.display = "none";
+        tabHistory.classList.remove("active-tab");
+        activeView = "llm";
+      }
+    } else {
+      /* Open settings → hide whichever tab was showing */
+      viewBeforeSettings     = activeView;
+      activeView             = "settings";
+  
+      settings.style.display       = "block";
+      contentLLM.style.display     = "none";
+      contentHistory.style.display = "none";
+      document.getElementById("buddy-content").style.display = "none";  // hide gap
+      document.querySelector(".buddy-tabs").style.display     = "none"; // hide tabs
+
+
+      tabLLM.classList.remove("active-tab");
+      tabHistory.classList.remove("active-tab");
+    }
   });
+  
+    // --- Suggested LLM tab ---
   document.getElementById("tab-llm").addEventListener("click", () => {
-    document.getElementById("content-llm").style.display = "block";
-    document.getElementById("content-history").style.display = "none";
+    document.getElementById("buddy-content").style.display = "block";
+    document.querySelector(".buddy-tabs").style.display     = "flex";
+
+    document.getElementById("content-llm").style.display      = "block";
+    document.getElementById("content-history").style.display  = "none";
+    document.getElementById("section-settings").style.display = "none";
+
     document.getElementById("tab-llm").classList.add("active-tab");
     document.getElementById("tab-history").classList.remove("active-tab");
+
+    activeView = "llm";
   });
+
+  // --- Score History tab ---
   document.getElementById("tab-history").addEventListener("click", () => {
-    document.getElementById("content-history").style.display = "block";
-    document.getElementById("content-llm").style.display = "none";
+    document.getElementById("buddy-content").style.display = "block";
+    document.querySelector(".buddy-tabs").style.display     = "flex";
+
+    document.getElementById("content-history").style.display  = "block";
+    document.getElementById("content-llm").style.display      = "none";
+    document.getElementById("section-settings").style.display = "none";
+
     document.getElementById("tab-history").classList.add("active-tab");
     document.getElementById("tab-llm").classList.remove("active-tab");
+
+    activeView = "history";
   });
+
+
   document.getElementById("toggle-score-detection").addEventListener("change", function(){
     scoreDetectionEnabled = this.checked;
     if (!scoreDetectionEnabled) {
       removeScorePipePopup();
-      removeScorePipePopup(); // ensure removal of any score popup
+      
     }
   });
   document.getElementById("toggle-pii-detection").addEventListener("change", function(){
@@ -457,6 +533,20 @@ function createDropdownPanel() {
       promptType = this.value;
     });
   });
+
+  /* theme radios – add this */
+  document.querySelectorAll('input[name="themeChoice"]').forEach(r =>
+    r.addEventListener("change", e => {
+      document.documentElement.classList.remove("theme-default",
+                                                "theme-purple",
+                                                "theme-charcoal");
+      document.documentElement.classList.add(e.target.value);
+    })
+  );
+
+  /* give the document its initial class */
+  document.documentElement.classList.add("theme-default");
+  
 }
 
 function toggleDropdownPanel() {
@@ -671,195 +761,87 @@ window.addEventListener("load", () => {
 /* ------------------ Inject CSS ------------------ */
 const style = document.createElement("style");
 style.innerHTML = `
-  /* Floating Container for Icon & Kebab */
-  #prompt-buddy-container {
-    position: fixed;
-    bottom: 20px; right: 0;
-    width: 56px; height: 56px;
-    overflow: hidden;
-    border-radius: 8px;
-    display: flex; align-items: center;
-    transition: width .3s ease;
-    z-index: 99999;
-    background: transparent;
-  }
-  #prompt-buddy-container:hover {
-    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-  }
-  #smart-suggest-img {
-    width: 56px; height: 56px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  #kebab-container {
-    width: 24px; height: 56px;
-    display: flex; align-items: center; justify-content: center;
-    background: #f0f0f0;
-    opacity: 0; transition: opacity .3s;
-  }
-  #prompt-buddy-container:hover #kebab-container {
-    opacity: 1;
-  }
-  #kebab-menu-btn {
-    width:100%; height:100%;
-    background:transparent; border:none;
-    cursor:pointer; color:#555; font-size:18px;
-  }
 
-  /* ==== Light Theme with Indigo/Teal Accent ==== */
-  .buddy-panel {
-    position: fixed;
-    bottom: 100px; right: 20px;
-    width: 380px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    font-family: 'Roboto', sans-serif;
-    font-size: 14px;
-    color: #333333;
-    z-index: 99999;
-    /* ← ALLOW overflow so header icons don’t get clipped */
-    overflow: visible;
-  }
-  .buddy-header {
-    display: flex; align-items: center; justify-content: space-between;
-    background: linear-gradient(90deg, #4c6ef5, #15aabf);
-    /* extra right padding so icons sit inside the corner */
-    padding: 12px 32px 12px 16px;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    /* ensure header children can overflow */
-    overflow: visible;
-  }
-  .buddy-title {
-    font-size: 16px; font-weight: 600; color: #ffffff;
-  }
-  .header-icons {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .header-icons > * {
-    background: transparent; border: none; padding: 4px;
-    cursor: pointer; color: rgba(255,255,255,0.8);
-    transition: color .2s;
-  }
-  .header-icons > *:hover {
-    color: #ffffff;
-  }
-  /* gear SVG fill */
-  .buddy-gear-btn svg {
-    width: 20px; height: 20px;
-    fill: currentColor;
-    transition: fill .2s;
-  }
-  /* close SVG stroke */
-  .buddy-close-btn svg {
-    width: 20px; height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    transition: stroke .2s;
-  }
-  .buddy-gear-btn:hover svg,
-  .buddy-close-btn:hover svg {
-    color: #ffffff;
-  }
+/* BEGIN BUDDY CSS ------------------------------------------------------- */
 
-  /* Tabs */
-  .buddy-tabs {
-    display: flex; background: #f1f3f5; border-bottom: 1px solid #e2e8f0;
-  }
-  .buddy-tab {
-    flex: 1; padding: 10px; background: transparent; border: none;
-    color: #555555; font-weight: 500; cursor: pointer;
-    transition: color .2s;
-  }
-  .buddy-tab:hover {
-    color: #4c6ef5;
-  }
-  .active-tab {
-    color: #4c6ef5; border-bottom: 3px solid #15aabf;
-  }
+/* ---------- Floating button ---------- */
+#prompt-buddy-container{position:fixed;bottom:20px;right:0;width:56px;height:56px;overflow:hidden;border-radius:8px;display:flex;align-items:center;transition:width .3s ease;z-index:99999}
+#prompt-buddy-container:hover{box-shadow:0 6px 16px rgba(0,0,0,.1)}
+#smart-suggest-img{width:56px;height:56px;border-radius:8px;cursor:pointer}
+#kebab-container{width:24px;height:56px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;opacity:0;transition:opacity .3s}
+#prompt-buddy-container:hover #kebab-container{opacity:1}
+#kebab-menu-btn{width:100%;height:100%;background:transparent;border:none;cursor:pointer;color:#555;font-size:18px}
 
-  /* Content area */
-  .buddy-content {
-    padding: 12px; background: #ffffff;
-    max-height: 300px; overflow-y: auto;
-  }
-  .buddy-content > div { display: none; }
-  .buddy-content > .visible { display: block; }
+/* ---------- Panel shell ---------- */
+.buddy-panel{position:fixed;bottom:100px;right:20px;width:380px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);font-family:'Roboto',sans-serif;font-size:14px;color:#333;z-index:99999;overflow:visible}
 
-  /* Score History List */
-  #score-history-list {
-    list-style: none; margin: 0; padding: 0;
-  }
-  #score-history-list li {
-    display: flex; justify-content: space-between;
-    align-items: center; padding: 8px 0;
-    border-bottom: 1px solid #e2e8f0;
-  }
-  .prompt-text {
-    font-size: 13px; color: #555555;
-    flex: 1; margin-right: 8px;
-  }
-  .copy-icon {
-    width: 20px; height: 20px;
-    fill: #4c6ef5; cursor: pointer;
-    transition: fill .2s;
-  }
-  .copy-icon:hover {
-    fill: #15aabf;
-  }
+/* ---------- Header bar ---------- */
+.buddy-header{display:flex;align-items:center;justify-content:space-between;background:var(--header-gradient,linear-gradient(90deg,#4c6ef5,#15aabf));padding:12px 32px 12px 16px;border-top-left-radius:12px;border-top-right-radius:12px}
+.buddy-title{font-size:16px;font-weight:600;color:#fff}        /* always white */
+.header-icons{display:flex;align-items:center;gap:8px}
+.header-icons button{display:flex;align-items:center;justify-content:center;padding:6px;background:transparent;border:none;cursor:pointer;color:rgba(255,255,255,.8);transition:color .2s;overflow:visible}
+.header-icons button:hover{color:#fff}
+.buddy-gear-btn svg,.buddy-close-btn svg{width:16px;height:16px;pointer-events:none;transition:fill .2s,stroke .2s}
+.buddy-gear-btn svg{fill:currentColor}
+.buddy-close-btn svg{fill:none;stroke:currentColor;stroke-width:2}
 
-  /* ---- Restored Score‑Pipe Popup & Meter Styles ---- */
-  #score-pipe-popup {
-    position: fixed; width: 240px; padding: 12px;
-    background: #ffffff; border: 1px solid #e2e8f0;
-    border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    font-family: 'Roboto', sans-serif; color: #333333;
-    z-index: 99999; opacity: 0; transform: translateY(10px);
-    animation: pipePopupFadeIn 0.3s forwards;
-  }
-  @keyframes pipePopupFadeIn {
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .pipe-popup-title {
-    font-size: 14px; font-weight: bold;
-    margin-bottom: 8px; text-align: center;
-  }
-  .pipe-popup-meter {
-    display: flex; justify-content: center;
-    margin-bottom: 8px;
-  }
-  .pipe-segment {
-    width: 12px; height: 20px; border-radius: 4px;
-    background-color: #e2e8f0; margin: 0 2px;
-    transition: background-color 0.3s;
-  }
-  .pipe-popup-legend {
-    font-size: 12px; color: #666666;
-    text-align: center;
-  }
+/* ---------- Tabs ---------- */
+.buddy-tabs{display:flex;background:#f1f3f5;border-bottom:1px solid #e2e8f0}
+.buddy-tab{flex:1;padding:10px;background:transparent;border:none;color:#555;font-weight:500;cursor:pointer;transition:color .2s}
+.buddy-tab:hover{color:var(--accent,#4c6ef5)}
+.active-tab{color:var(--accent,#4c6ef5);border-bottom:3px solid var(--accent,#4c6ef5)}
 
-  /* Mini‑meter for history */
-  .mini-pipe-meter { display: flex; }
-  .mini-segment {
-    width: 8px; height: 14px; border-radius: 3px;
-    background-color: #e2e8f0; margin-right: 3px;
-  }
+/* ---------- Main content area ---------- */
+.buddy-content{padding:16px 20px;background:#fff;max-height:300px;overflow-y:auto}
+.buddy-content>div{display:none}
+.buddy-content>.visible{display:block}
 
-  /* PII Tag */
-  .pii-tag {
-    position: absolute; top: 50%; left: 0;
-    transform: translate(-100%,-50%);
-    padding: 8px 12px; background: #ffffff;
-    border: 1px solid #e2e8f0; border-radius: 6px;
-    color: #333333; font-size: 13px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    opacity: 0; animation: fadeInLeft 0.3s forwards;
-  }
-  @keyframes fadeInLeft {
-    to { opacity: 1; transform: translate(-100%,-50%); }
-  }
+/* ---------- Settings section ---------- */
+.buddy-section{padding:16px 20px}
+.settings-heading{margin:16px 0 8px;font-size:14px;font-weight:600;color:#4c6ef5}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f3f5;font-size:13px}
+.setting-row:last-of-type{border-bottom:none}
+.setting-label{color:#333}
+
+/* Toggle switch */
+.switch{position:relative;width:36px;height:20px}
+.switch input{display:none}
+.slider{position:absolute;inset:0;background:#ced4da;border-radius:999px;transition:.25s}
+.slider:before{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.25s}
+.switch input:checked+.slider{background:var(--accent,#4c6ef5)}
+.switch input:checked+.slider:before{transform:translateX(16px)}
+
+/* Inline radio group */
+.radio-group label{margin-left:12px;font-size:12px;white-space:nowrap}
+
+/* ---------- Theme variables ---------- */
+:root{
+  --accent:#4c6ef5;
+  --header-gradient:linear-gradient(90deg,#4c6ef5,#15aabf);
+}
+.theme-purple{
+  --accent:#845ef7;
+  --header-gradient:linear-gradient(90deg,#845ef7,#b197fc);
+}
+.theme-charcoal{
+  --accent:#adb5bd;
+  --header-gradient:linear-gradient(90deg,#495057,#343a40);
+}
+
+/* ---------- Misc (score popup, history list, etc.) ---------- */
+#score-pipe-popup{position:fixed;width:240px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,.1);font-family:'Roboto',sans-serif;color:#333;z-index:99999;opacity:0;transform:translateY(10px);animation:pipePopupFadeIn .3s forwards}
+@keyframes pipePopupFadeIn{to{opacity:1;transform:translateY(0)}}
+.pipe-popup-title{font-size:14px;font-weight:bold;margin-bottom:8px;text-align:center}
+.pipe-popup-meter{display:flex;justify-content:center;margin-bottom:8px}
+.pipe-segment{width:12px;height:20px;border-radius:4px;background:#e2e8f0;margin:0 2px;transition:background-color .3s}
+.pipe-popup-legend{font-size:12px;color:#666;text-align:center}
+#score-history-list{list-style:none;margin:0;padding:0}
+#score-history-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e2e8f0}
+.prompt-text{font-size:13px;color:#555;flex:1;margin-right:8px}
+.copy-icon{width:20px;height:20px;fill:var(--accent,#4c6ef5);cursor:pointer;transition:fill .2s}
+.copy-icon:hover{fill:#15aabf}
+
+/* END BUDDY CSS --------------------------------------------------------- */
+
 `;
 document.head.appendChild(style);
