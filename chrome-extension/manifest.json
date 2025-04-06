@@ -10,6 +10,12 @@
     "48": "icons/logo-48.png",
     "128": "icons/logo-128.png"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle PromptBuddy"
+  },
   "web_accessible_resources": [
     {
       "resources": [
