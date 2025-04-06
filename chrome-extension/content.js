@@ -9,7 +9,7 @@ const MAX_HISTORY = 5;
 let activeView         = "llm";   
 let viewBeforeSettings = "llm";   
 let currentTextbox = null;
-
+let isUIActive = false;
 
 // Global flags for detection settings and prompt type
 let scoreDetectionEnabled = true;
@@ -147,7 +147,7 @@ function removePIIPopup() {
   const imgBtn = document.getElementById("smart-suggest-img");
   if (!imgBtn) return;
   // Revert to the default logo
-  imgBtn.src = chrome.runtime.getURL("icons/logo.png");
+  imgBtn.src = chrome.runtime.getURL("icons/logo-128.png");
   // Remove the animation class
   imgBtn.classList.remove("logo-red-animate");
 }
@@ -190,7 +190,7 @@ function scorePrompt(prompt) {
   if (cleaned === lastScoredPrompt) return;
   lastScoredPrompt = cleaned;
 
-  fetch("http://localhost:8000/prompt-score", {
+  fetch(`${BASE_URL}/prompt-score`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: cleaned })
@@ -654,7 +654,7 @@ function createFloatingButton() {
   
   const imgBtn = document.createElement("img");
   imgBtn.id = "smart-suggest-img";
-  imgBtn.src = chrome.runtime.getURL("icons/logo.png");
+  imgBtn.src = chrome.runtime.getURL("icons/logo-128.png");
   imgBtn.alt = "Prompt Buddy";
   imgBtn.style.width = "56px";
   imgBtn.style.height = "56px";
@@ -773,6 +773,36 @@ function createFloatingButton() {
   document.body.appendChild(container);
 }
 
+// ------------------ UI Toggle Helper Functions ------------------
+
+// Call this function to create/inject all UI elements.
+function createBuddyUI() {
+  createFloatingButton();
+  createDropdownPanel();
+  observeInputBox();
+  updateScoreHistoryUI();
+  // You can add any additional initialization here if needed.
+}
+
+// Call this function to remove all UI elements.
+function removeBuddyUI() {
+  // Remove the floating button container.
+  const container = document.getElementById("prompt-buddy-container");
+  if (container) container.remove();
+
+  // Remove the dropdown panel.
+  const panel = document.getElementById("buddy-panel");
+  if (panel) panel.remove();
+
+  // Also remove any active popups.
+  removeScorePipePopup();
+  removePIIPopup();
+
+  // (Optional) Disconnect any observers if you stored them.
+}
+
+
+
 
 
 /* ------------------ On Load ------------------ */
@@ -780,12 +810,10 @@ window.addEventListener("load", () => {
   setTimeout(() => {
     const box = findActiveTextbox();
     if (box) {
-      createFloatingButton();
-      createDropdownPanel();
-      observeInputBox();
-      updateScoreHistoryUI();
+      createBuddyUI();    // Create the UI elements
+      isUIActive = true;    // Mark UI as active
     } else {
-      console.log("❌ No input box found.");
+      console.log("No input box found.");
     }
   }, 3000);
   // Start checking for a new active textbox every 1 second
@@ -889,6 +917,10 @@ style.innerHTML = `
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+#smart-suggest-img:hover {
+  transform: scale(1.1);
+}
+
 /* Define the pulse animation */
 @keyframes logoRedPulse {
   0% {
@@ -915,4 +947,18 @@ style.innerHTML = `
 /* END BUDDY CSS --------------------------------------------------------- */
 
 `;
+
+// ------------------ Message Listener for UI Toggle ------------------
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "toggleUI") {
+    if (isUIActive) {
+      removeBuddyUI();
+      isUIActive = false;
+    } else {
+      createBuddyUI();
+      isUIActive = true;
+    }
+  }
+});
+
 document.head.appendChild(style);
