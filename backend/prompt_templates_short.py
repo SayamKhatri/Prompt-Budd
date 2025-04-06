@@ -1,13 +1,22 @@
-# prompt_templates.py
 from typing import List
 import openai
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+_openai_initialized = False
+
+def get_openai_client():
+    global _openai_initialized
+    if not _openai_initialized:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing OPENAI_API_KEY environment variable.")
+        openai.api_key = api_key
+        _openai_initialized = True
+    return openai
 
 def suggest_prompt_templates(user_prompt: str, num_templates: int = 3) -> List[str]:
+    openai = get_openai_client()
+
     system_message = """
         'As an expert AI prompt engineer who knows how to interpret an average humans prompt and rewrite it in a '
         'way that increases the probability of the model generating the most useful possible response to any specific '
@@ -32,8 +41,5 @@ def suggest_prompt_templates(user_prompt: str, num_templates: int = 3) -> List[s
     )
 
     suggestions = response['choices'][0]['message']['content']
-
     templates = [template.strip() for template in suggestions.strip().split("\n\n") if template.strip()]
-
     return templates
-

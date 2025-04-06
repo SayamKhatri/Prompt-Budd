@@ -2,10 +2,20 @@ from groq import Groq
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_groq_client = None
+
+def get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing GROQ_API_KEY environment variable.")
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
+
 
 def enhance_prompt_with_groq(prompt: str):
+    client = get_groq_client()
     messages = [
         {
             "role": "system",
@@ -36,7 +46,5 @@ def enhance_prompt_with_groq(prompt: str):
     )
 
     return response.choices[0].message.content
-
-
 
 
