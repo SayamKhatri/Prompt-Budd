@@ -6,12 +6,22 @@
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "icons": {
-    "48": "icons/logo.png"
+    "16": "icons/logo-16.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle PromptBuddy"
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/logo.png",
+        "icons/logo-16.png",
+        "icons/logo-48.png",
+        "icons/logo-128.png",
         "icons/logo_red.png"
       ],
       "matches": ["<all_urls>"]
