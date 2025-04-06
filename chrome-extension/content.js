@@ -329,12 +329,22 @@ function updateScoreHistoryUI() {
       meterHTML += `<div class="mini-segment" style="background-color:${color};"></div>`;
     }
     li.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="prompt-text" style="font-size: 13px;">${truncatePrompt(item.prompt, 40)}</span>
-        <div class="mini-pipe-meter">${meterHTML}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="prompt-text" style="font-size:13px;">${truncatePrompt(item.prompt,40)}</span>
       </div>
-      <span class="copy-icon" title="Copy prompt" style="cursor: pointer; font-size: 16px;">📋</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="score-dot" style="background:${fillColor};"></span>
+        <span class="copy-icon" title="Copy prompt" style="cursor:pointer;font-size:16px;">📋</span>
+      </div>
     `;
+
+    // li.innerHTML = `
+    //   <div style="display: flex; align-items: center; gap: 8px;">
+    //     <span class="prompt-text" style="font-size: 13px;">${truncatePrompt(item.prompt, 40)}</span>
+    //     <div class="mini-pipe-meter">${meterHTML}</div>
+    //   </div>
+    //   <span class="copy-icon" title="Copy prompt" style="cursor: pointer; font-size: 16px;">📋</span>
+    // `;
     li.querySelector(".copy-icon").addEventListener("click", () => {
       navigator.clipboard.writeText(item.prompt)
         .then(() => { alert("Prompt copied!"); })
@@ -428,7 +438,7 @@ function createDropdownPanel() {
     <div class="setting-row">
       <span class="setting-label">Colour Scheme</span>
       <div class="radio‑group">
-        <label><input type="radio" name="themeChoice" value="theme-default" checked> Blue (default)</label>
+        <label><input type="radio" name="themeChoice" value="theme-default" checked> Blue</label>
         <label><input type="radio" name="themeChoice" value="theme-purple"> Purple</label>
         <label><input type="radio" name="themeChoice" value="theme-charcoal"> Charcoal</label>
       </div>
@@ -840,6 +850,14 @@ style.innerHTML = `
 .prompt-text{font-size:13px;color:#555;flex:1;margin-right:8px}
 .copy-icon{width:20px;height:20px;fill:var(--accent,#4c6ef5);cursor:pointer;transition:fill .2s}
 .copy-icon:hover{fill:#15aabf}
+
+.score-dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-left:8px;          
+}
 
 /* END BUDDY CSS --------------------------------------------------------- */
 
