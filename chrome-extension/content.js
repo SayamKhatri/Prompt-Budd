@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "https://prompt-assistant-282032561204.us-east1.run.app";
 console.log("Extension injected...");
 
 let debounceTimer;

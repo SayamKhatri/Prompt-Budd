@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PromptBud Dev Testing",
+  "name": "PromptBud",
   "version": "1.0",
-  "description": "Local Dev",
+  "description": "Production",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "icons": {
