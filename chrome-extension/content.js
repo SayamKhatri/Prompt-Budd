@@ -189,7 +189,8 @@ function scorePrompt(prompt) {
   const cleaned = prompt.trim();
   if (cleaned === lastScoredPrompt) return;
   lastScoredPrompt = cleaned;
-  fetch(`${BASE_URL}/prompt-score`, {
+
+  fetch("http://localhost:8000/prompt-score", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: cleaned })
