@@ -147,7 +147,7 @@ function removePIIPopup() {
   const imgBtn = document.getElementById("smart-suggest-img");
   if (!imgBtn) return;
   // Revert to the default logo
-  imgBtn.src = chrome.runtime.getURL("icons/logo.png");
+  imgBtn.src = chrome.runtime.getURL("icons/logo-128.png");
   // Remove the animation class
   imgBtn.classList.remove("logo-red-animate");
 }
@@ -190,7 +190,7 @@ function scorePrompt(prompt) {
   if (cleaned === lastScoredPrompt) return;
   lastScoredPrompt = cleaned;
 
-  fetch("http://localhost:8000/prompt-score", {
+  fetch(`${BASE_URL}/prompt-score`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: cleaned })
@@ -654,7 +654,7 @@ function createFloatingButton() {
   
   const imgBtn = document.createElement("img");
   imgBtn.id = "smart-suggest-img";
-  imgBtn.src = chrome.runtime.getURL("icons/logo.png");
+  imgBtn.src = chrome.runtime.getURL("icons/logo-128.png");
   imgBtn.alt = "Prompt Buddy";
   imgBtn.style.width = "56px";
   imgBtn.style.height = "56px";
@@ -887,6 +887,10 @@ style.innerHTML = `
 
 #smart-suggest-img {
   transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#smart-suggest-img:hover {
+  transform: scale(1.1);
 }
 
 /* Define the pulse animation */
