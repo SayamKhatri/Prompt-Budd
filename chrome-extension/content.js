@@ -259,10 +259,15 @@ function observeInputBox() {
   const isTextarea = box.tagName === "TEXTAREA";
   const getText    = () => isTextarea ? box.value : box.innerText;
 
-  // Debounced change handler
+
   const handleChange = () => {
+    // If the UI is toggled off, do nothing.
+    if (!isUIActive) return;
+    
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
+      // Re-check before executing
+      if (!isUIActive) return;
       const current = getText().trim();
       if (!current) {
         removeScorePipePopup();
@@ -273,6 +278,21 @@ function observeInputBox() {
       detectPII(current);
     }, 750);
   };
+  
+  // // Debounced change handler
+  // const handleChange = () => {
+  //   clearTimeout(debounceTimer);
+  //   debounceTimer = setTimeout(() => {
+  //     const current = getText().trim();
+  //     if (!current) {
+  //       removeScorePipePopup();
+  //       removePIIPopup();
+  //       return;
+  //     }
+  //     scorePrompt(current);
+  //     detectPII(current);
+  //   }, 750);
+  // };
 
   // Listen for edits
   if (isTextarea) {
@@ -310,6 +330,9 @@ function observeInputBox() {
 
 // On Enter: hide popups and record history & trigger LLM suggestion
   box.addEventListener("keydown", (event) => {
+    // If UI is off, do nothing.
+    if (!isUIActive) return;
+    
     const isEnter = event.key === "Enter";
     const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
     if (!plainEnter) return;
@@ -352,6 +375,10 @@ function observeInputBox() {
 function checkForNewTextbox() {
   const newBox = findActiveTextbox();
   if (newBox && newBox !== currentTextbox) {
+
+    // Reset the summary when the chat screen changes.
+    contextSummary = "";
+    promptHistory = [];  // Clear old history
     // Clear popups from the previous screen
     removeScorePipePopup();
     removePIIPopup();

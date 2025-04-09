@@ -2,6 +2,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 from detect_pii import mask_pii
+load_dotenv()
 
 api_key = os.environ["GEMINI_API_KEY"]
 client = genai.Client(api_key=api_key)

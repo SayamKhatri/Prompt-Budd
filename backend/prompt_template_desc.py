@@ -19,15 +19,14 @@ def enhance_prompt_with_groq(prompt: str, summary: str = ""):
     messages = [
         {
             "role": "system",
+
             "content": (
-                "You are an expert in prompt engineering. Your task is to transform a vague or simple user prompt "
-                "into a structured format that clearly defines the objective, output format, and any warnings or ethical caveats. "
-                "You will also be provided with a brief summary of the user's previous prompts in case you require to maintain continuity; however, "
-                "the primary focus must remain on optimizing the current prompt (approximately 90% of your attention). "
-                "If the summary of user's previous prompts is unrelated to the current prompt, just ignore it and"
-                "Do not include it in the Enhanced Prompt"
-                "If the prompt is harmful or unethical, simply respond with: 'I cannot optimize it.' "
-                "Return only the structured format without any additional commentary."
+                "You are an expert in prompt engineering. Your task is to transform a vague or simple user prompt into a structured format that specifies "
+                "the objective, desired output format, and any ethical caveats. If the prompt is harmful or unethical, respond only with: 'I cannot optimize it.' "
+                "Return only the structured format without any additional commentary. \n\n"
+                "You will also receive a brief summary of the user's previous prompts intended for context continuity. However, your primary focus (at least 90%) "
+                "must remain solely on the current prompt. If the historical summary is unrelated, ignore it completely. Only if there is meaningful continuity should you "
+                "incorporate elements of the summary into the enhanced output."
             )
         },
 
