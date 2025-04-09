@@ -52,6 +52,7 @@ def enhance_prompt_with_groq(prompt: str, summary: str = ""):
             response = client.chat.completions.create(
                 # model= "llama-3.1-8b-instant",
                 model="llama-3.3-70b-specdec",   
+                # model= 'deepseek-r1-distill-qwen-32b',
                 messages=messages,
                 temperature=0.7
             )

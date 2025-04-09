@@ -133,7 +133,6 @@ function removeScorePipePopup() {
 
 /* ------------------ PII Detection Functions ------------------ */
 function showPIIPopup() {
-  if (document.getElementById("pii-tag")) return;
   const imgBtn = document.getElementById("smart-suggest-img");
   if (!imgBtn) return;
   imgBtn.style.position = "relative";
@@ -906,7 +905,7 @@ function createFloatingButton() {
       alert("⚠️ Please type something into the box first.");
       return;
     }
-  
+
     // Choose endpoint based on prompt type
     const endpoint = promptType === "descriptive"
       ? `${BASE_URL}/suggest-templates-descriptive`
@@ -1127,7 +1126,6 @@ style.innerHTML = `
 .logo-red-animate {
   animation: logoRedPulse 0.5s ease-in-out;
 }
-
 
 
 /* END BUDDY CSS --------------------------------------------------------- */
