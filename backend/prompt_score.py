@@ -1,15 +1,21 @@
 from google import genai
-from dotenv import load_dotenv
 import os
 from detect_pii import mask_pii
-load_dotenv()
+import time
 
-api_key = os.environ["GEMINI_API_KEY"]
-client = genai.Client(api_key=api_key)
+_gemini_client = None
 
+def get_gemini_client():
+    global _gemini_client
+    if _gemini_client is None:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing GEMINI_API_KEY environment variable.")
+        _gemini_client = genai.Client(api_key=api_key)
+    return _gemini_client
 
 def rate_prompt_quality(prompt: str) -> dict:
-
+    client = get_gemini_client()
     # Mask any PII from the input prompt.
     safe_prompt = mask_pii(prompt)
 
@@ -25,16 +31,23 @@ def rate_prompt_quality(prompt: str) -> dict:
         f"Prompt: {safe_prompt}"
     )
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-lite",
-            contents=scoring_prompt
-        )
-        score = response.text.strip().lower()
-        if score not in {"low", "medium", "high"}:
-            score = "unknown"
-    except Exception as e:
-        print("Error from Gemini:", e)
-        score = "unknown"
-
-    return {"score": score, "masked_prompt": safe_prompt}
+    max_retries = 3
+    retry_delay = 0.5
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash-lite",
+                contents=scoring_prompt
+            )
+            score = response.text.strip().lower()
+            if score not in {"low", "medium", "high"}:
+                score = "unknown"
+            return {"score": score, "masked_prompt": safe_prompt}
+        except Exception as e:
+            print(f"Error from Gemini on attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                
+                return {"score": "unknown", "masked_prompt": safe_prompt}
