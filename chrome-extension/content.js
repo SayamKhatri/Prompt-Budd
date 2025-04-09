@@ -247,7 +247,7 @@ function checkAndUpdateLLMSuggestion() {
 }
 
 /* ------------------ Observer Function ------------------ */
-/* ——— tweak to your observer so it works for both <textarea> and contenteditable ——— */
+
 function observeInputBox() {
   const box = findActiveTextbox();
   if (!box) {
@@ -278,21 +278,6 @@ function observeInputBox() {
     }, 750);
   };
   
-  // // Debounced change handler
-  // const handleChange = () => {
-  //   clearTimeout(debounceTimer);
-  //   debounceTimer = setTimeout(() => {
-  //     const current = getText().trim();
-  //     if (!current) {
-  //       removeScorePipePopup();
-  //       removePIIPopup();
-  //       return;
-  //     }
-  //     scorePrompt(current);
-  //     detectPII(current);
-  //   }, 750);
-  // };
-
   // Listen for edits
   if (isTextarea) {
     box.addEventListener("input", handleChange);
@@ -304,28 +289,6 @@ function observeInputBox() {
       subtree: true,
     });
   }
-
-  // // On Enter: hide popups and record history
-  // box.addEventListener("keydown", (event) => {
-  //   const isEnter    = event.key === "Enter";
-  //   const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
-  //   if (!plainEnter) return;
-
-  //   // ** Hide the popups immediately **
-  //   removeScorePipePopup();
-  //   removePIIPopup();
-
-  //   // Then record to history & trigger LLM suggestion
-  //   setTimeout(() => {
-  //     const submitted = lastScoredPrompt;
-  //     if (!submitted) return;
-  //     if (!promptHistory.length || promptHistory[0] !== submitted) {
-  //       promptHistory.unshift(submitted);
-  //       if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
-  //       checkAndUpdateLLMSuggestion();
-  //     }
-  //   }, 300);
-  // });
 
 // On Enter: hide popups and record history & trigger LLM suggestion
   box.addEventListener("keydown", (event) => {
@@ -392,58 +355,6 @@ function checkForNewTextbox() {
     observeInputBox();
   }
 }
-/* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
-// function updateScoreHistoryUI() {
-//   const historyList = document.getElementById("score-history-list");
-//   if (!historyList) return;
-//   historyList.innerHTML = "";
-//   scoreHistory.forEach((item) => {
-//     let fillCount = 0;
-//     let fillColor = "#ccc";
-//     if (item.score === "low") {
-//       fillCount = 2;
-//       fillColor = "red";
-//     } else if (item.score === "medium") {
-//       fillCount = 3;
-//       fillColor = "orange";
-//     } else if (item.score === "high") {
-//       fillCount = 5;
-//       fillColor = "green";
-//     }
-//     const li = document.createElement("li");
-//     li.style.marginBottom = "8px";
-//     li.style.display = "flex";
-//     li.style.alignItems = "center";
-//     li.style.justifyContent = "space-between";
-//     let meterHTML = "";
-//     for (let i = 0; i < 5; i++) {
-//       const color = i < fillCount ? fillColor : "#ddd";
-//       meterHTML += `<div class="mini-segment" style="background-color:${color};"></div>`;
-//     }
-//     li.innerHTML = `
-//       <div style="display:flex;align-items:center;gap:8px;">
-//         <span class="prompt-text" style="font-size:13px;">${truncatePrompt(item.prompt,40)}</span>
-//       </div>
-//       <div style="display:flex;align-items:center;gap:8px;">
-//         <span class="score-dot" style="background:${fillColor};"></span>
-//         <span class="copy-icon" title="Copy prompt" style="cursor:pointer;font-size:16px;">📋</span>
-//       </div>
-//     `;
-
-//     li.querySelector(".copy-icon").addEventListener("click", () => {
-//       navigator.clipboard.writeText(item.prompt)
-//         .then(() => { alert("Prompt copied!"); })
-//         .catch((err) => { console.error("Copy failed:", err); });
-//     });
-//     historyList.appendChild(li);
-//   });
-// }
-
-// function truncatePrompt(prompt, maxLength) {
-//   if (prompt.length <= maxLength) return prompt;
-//   return prompt.slice(0, maxLength) + "...";
-// }
-
 
 /* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
 function updateScoreHistoryUI() {
@@ -823,71 +734,6 @@ function createFloatingButton() {
     kebabContainer.style.opacity = "0";
   });
   
-
-  /* ------------------ Floating Button Icon Click (updated) ------------------ */
-
-  // imgBtn.addEventListener("click", () => {
-  //   const inputBox = findActiveTextbox();
-  //   if (!inputBox) {
-  //     alert("Couldn't find textbox.");
-  //     return;
-  //   }
-  
-  //   const tag = inputBox.tagName;
-  //   const isInputLike = tag === "INPUT" || tag === "TEXTAREA";
-  //   const isEditable  = inputBox.isContentEditable;
-  //   const original = isInputLike
-  //     ? inputBox.value.trim()
-  //     : inputBox.innerText.trim();
-  
-  //   if (!original) {
-  //     alert("⚠️ Please type something into the box first.");
-  //     return;
-  //   }
-  
-  //   const endpoint = promptType === "descriptive"
-  //     ? `${BASE_URL}/suggest-templates-descriptive`
-  //     : `${BASE_URL}/suggest-templates`;
-  
-  //   fetch(endpoint, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ prompt: original })
-  //   })
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       const templates = data.templates || [];
-  //       if (!templates.length) return;
-  //       const newPrompt = Array.isArray(templates)
-  //         ? templates.join("\n\n")
-  //         : templates;
-  
-  //       if (isInputLike) {
-  //         // use the native setter on either INPUT or TEXTAREA
-  //         const proto = tag === "TEXTAREA"
-  //           ? window.HTMLTextAreaElement.prototype
-  //           : window.HTMLInputElement.prototype;
-  //         const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
-  //         setter.call(inputBox, newPrompt);
-  //         // notify React
-  //         inputBox.dispatchEvent(new Event("input",  { bubbles: true }));
-  //         inputBox.dispatchEvent(new Event("change", { bubbles: true }));
-  //       }
-  //       else if (isEditable) {
-  //         // contenteditable case
-  //         inputBox.innerText = newPrompt;
-  //         inputBox.dispatchEvent(new InputEvent("input", { bubbles: true }));
-  //       }
-  //       else {
-  //         console.warn("Unknown box type, can't set value:", inputBox);
-  //       }
-  
-  //       inputBox.focus();
-  //       removeScorePipePopup();
-  //       scorePrompt(newPrompt);
-  //     })
-  //     .catch(err => console.error("Error fetching prompt suggestion:", err));
-  // });
   
   imgBtn.addEventListener("click", () => {
     const inputBox = findActiveTextbox();
@@ -905,6 +751,9 @@ function createFloatingButton() {
       alert("⚠️ Please type something into the box first.");
       return;
     }
+
+    // Show the animated loading dots and hide the logo
+    showLoadingDots();
 
     // Choose endpoint based on prompt type
     const endpoint = promptType === "descriptive"
@@ -924,6 +773,9 @@ function createFloatingButton() {
     })
       .then(res => res.json())
       .then(data => {
+
+      // Hide the loading dots and show the logo again
+      hideLoadingDots();
         const templates = data.templates || [];
         if (!templates.length) return;
         const newPrompt = Array.isArray(templates)
@@ -957,6 +809,46 @@ function createFloatingButton() {
   
   document.body.appendChild(container);
 }
+// ------------------ Loading Dots Helper Functions ------------------
+
+function showLoadingDots() {
+  // Hide the main logo during loading.
+  const imgBtn = document.getElementById("smart-suggest-img");
+  if (imgBtn) {
+    imgBtn.style.display = "none";
+  }
+  
+  // Create or show the loading dots overlay.
+  let loader = document.getElementById("loading-dots");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "loading-dots";
+    loader.className = "loading-dots";
+    loader.innerHTML = "<span></span><span></span><span></span>";
+    // Append this overlay to the prompt buddy container.
+    const container = document.getElementById("prompt-buddy-container");
+    if (container) {
+      container.appendChild(loader);
+    }
+  } else {
+    loader.style.display = "inline-flex";
+  }
+}
+
+function hideLoadingDots() {
+  // Show the main logo once loading is complete.
+  const imgBtn = document.getElementById("smart-suggest-img");
+  if (imgBtn) {
+    imgBtn.style.display = "block";
+  }
+  
+  // Hide the loading dots overlay.
+  const loader = document.getElementById("loading-dots");
+  if (loader) {
+    loader.style.display = "none";
+  }
+}
+
 
 // ------------------ UI Toggle Helper Functions ------------------
 
@@ -1125,6 +1017,48 @@ style.innerHTML = `
 /* Apply the pulse animation when PII is detected */
 .logo-red-animate {
   animation: logoRedPulse 0.5s ease-in-out;
+}
+
+/* Loading Dots on Black Overlay Animation */
+@keyframes blink {
+  0% { opacity: 0.2; }
+  20% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;   /* match your container dimensions */
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001; /* above the logo */
+  background: black;  /* black overlay */
+  border-radius: 8px;
+}
+
+.loading-dots span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: white;  /* white dots */
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: blink 1.4s infinite;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 
