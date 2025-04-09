@@ -10,6 +10,8 @@ let activeView         = "llm";
 let viewBeforeSettings = "llm";   
 let currentTextbox = null;
 let isUIActive = false;
+let contextSummary = "";  // Store the summary of the last 5 prompts.
+
 
 // Global flags for detection settings and prompt type
 let scoreDetectionEnabled = true;
@@ -177,6 +179,7 @@ function detectPII(prompt) {
 }
 
 /* ------------------ Score Prompt Function ------------------ */
+
 function scorePrompt(prompt) {
   if (!scoreDetectionEnabled) {
     removeScorePipePopup();
@@ -197,9 +200,12 @@ function scorePrompt(prompt) {
   })
     .then(res => res.json())
     .then(data => {
-      const score = data.score || "unknown";
+      const scoreObj = data.score || {}; 
+      const score = scoreObj.score || "unknown";
+      const displayedPrompt = scoreObj.masked_prompt || cleaned;
+      
       if (["low", "medium", "high"].includes(score)) {
-        scoreHistory.unshift({ prompt: cleaned, score });
+        scoreHistory.unshift({ prompt: displayedPrompt, score });
         if (scoreHistory.length > MAX_HISTORY) scoreHistory.pop();
         updateScoreHistoryUI();
         showScorePipePopup(score);
@@ -237,7 +243,7 @@ function checkAndUpdateLLMSuggestion() {
       }
     })
     .catch(err => {
-      console.error("🔥 Failed to get LLM suggestion:", err);
+      console.error("Failed to get LLM suggestion:", err);
     });
 }
 
@@ -265,7 +271,7 @@ function observeInputBox() {
       }
       scorePrompt(current);
       detectPII(current);
-    }, 700);
+    }, 750);
   };
 
   // Listen for edits
@@ -280,27 +286,65 @@ function observeInputBox() {
     });
   }
 
-  // On Enter: hide popups and record history
+  // // On Enter: hide popups and record history
+  // box.addEventListener("keydown", (event) => {
+  //   const isEnter    = event.key === "Enter";
+  //   const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
+  //   if (!plainEnter) return;
+
+  //   // ** Hide the popups immediately **
+  //   removeScorePipePopup();
+  //   removePIIPopup();
+
+  //   // Then record to history & trigger LLM suggestion
+  //   setTimeout(() => {
+  //     const submitted = lastScoredPrompt;
+  //     if (!submitted) return;
+  //     if (!promptHistory.length || promptHistory[0] !== submitted) {
+  //       promptHistory.unshift(submitted);
+  //       if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
+  //       checkAndUpdateLLMSuggestion();
+  //     }
+  //   }, 300);
+  // });
+
+// On Enter: hide popups and record history & trigger LLM suggestion
   box.addEventListener("keydown", (event) => {
-    const isEnter    = event.key === "Enter";
+    const isEnter = event.key === "Enter";
     const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
     if (!plainEnter) return;
 
-    // ** Hide the popups immediately **
+    // Hide the popups immediately
     removeScorePipePopup();
     removePIIPopup();
 
-    // Then record to history & trigger LLM suggestion
+    // Then record to history & trigger LLM suggestion and summary generation
     setTimeout(() => {
       const submitted = lastScoredPrompt;
       if (!submitted) return;
       if (!promptHistory.length || promptHistory[0] !== submitted) {
         promptHistory.unshift(submitted);
         if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
+        
+        // Existing call to prompt_classifier
         checkAndUpdateLLMSuggestion();
+
+        // New: Call the summary endpoint with the last 5 prompts
+        fetch(`${BASE_URL}/summary-gen`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompts: promptHistory.slice(0, MAX_HISTORY) })
+        })
+          .then(res => res.json())
+          .then(data => {
+            contextSummary = data.summary || "";
+            console.log("Updated context summary:", contextSummary);
+          })
+          .catch(err => console.error("Summary generation error:", err));
       }
     }, 300);
   });
+
 
   console.log("👁️ Observer & Enter key capture initialized");
 }
@@ -322,6 +366,59 @@ function checkForNewTextbox() {
     observeInputBox();
   }
 }
+/* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
+// function updateScoreHistoryUI() {
+//   const historyList = document.getElementById("score-history-list");
+//   if (!historyList) return;
+//   historyList.innerHTML = "";
+//   scoreHistory.forEach((item) => {
+//     let fillCount = 0;
+//     let fillColor = "#ccc";
+//     if (item.score === "low") {
+//       fillCount = 2;
+//       fillColor = "red";
+//     } else if (item.score === "medium") {
+//       fillCount = 3;
+//       fillColor = "orange";
+//     } else if (item.score === "high") {
+//       fillCount = 5;
+//       fillColor = "green";
+//     }
+//     const li = document.createElement("li");
+//     li.style.marginBottom = "8px";
+//     li.style.display = "flex";
+//     li.style.alignItems = "center";
+//     li.style.justifyContent = "space-between";
+//     let meterHTML = "";
+//     for (let i = 0; i < 5; i++) {
+//       const color = i < fillCount ? fillColor : "#ddd";
+//       meterHTML += `<div class="mini-segment" style="background-color:${color};"></div>`;
+//     }
+//     li.innerHTML = `
+//       <div style="display:flex;align-items:center;gap:8px;">
+//         <span class="prompt-text" style="font-size:13px;">${truncatePrompt(item.prompt,40)}</span>
+//       </div>
+//       <div style="display:flex;align-items:center;gap:8px;">
+//         <span class="score-dot" style="background:${fillColor};"></span>
+//         <span class="copy-icon" title="Copy prompt" style="cursor:pointer;font-size:16px;">📋</span>
+//       </div>
+//     `;
+
+//     li.querySelector(".copy-icon").addEventListener("click", () => {
+//       navigator.clipboard.writeText(item.prompt)
+//         .then(() => { alert("Prompt copied!"); })
+//         .catch((err) => { console.error("Copy failed:", err); });
+//     });
+//     historyList.appendChild(li);
+//   });
+// }
+
+// function truncatePrompt(prompt, maxLength) {
+//   if (prompt.length <= maxLength) return prompt;
+//   return prompt.slice(0, maxLength) + "...";
+// }
+
+
 /* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
 function updateScoreHistoryUI() {
   const historyList = document.getElementById("score-history-list");
@@ -350,9 +447,13 @@ function updateScoreHistoryUI() {
       const color = i < fillCount ? fillColor : "#ddd";
       meterHTML += `<div class="mini-segment" style="background-color:${color};"></div>`;
     }
+    
+    // Use the masked prompt if it exists; otherwise, use the raw prompt.
+    const displayPrompt = item.masked_prompt ? item.masked_prompt : item.prompt;
+    
     li.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="prompt-text" style="font-size:13px;">${truncatePrompt(item.prompt,40)}</span>
+        <span class="prompt-text" style="font-size:13px;">${truncatePrompt(displayPrompt, 40)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="score-dot" style="background:${fillColor};"></span>
@@ -360,15 +461,8 @@ function updateScoreHistoryUI() {
       </div>
     `;
 
-    // li.innerHTML = `
-    //   <div style="display: flex; align-items: center; gap: 8px;">
-    //     <span class="prompt-text" style="font-size: 13px;">${truncatePrompt(item.prompt, 40)}</span>
-    //     <div class="mini-pipe-meter">${meterHTML}</div>
-    //   </div>
-    //   <span class="copy-icon" title="Copy prompt" style="cursor: pointer; font-size: 16px;">📋</span>
-    // `;
     li.querySelector(".copy-icon").addEventListener("click", () => {
-      navigator.clipboard.writeText(item.prompt)
+      navigator.clipboard.writeText(displayPrompt)
         .then(() => { alert("Prompt copied!"); })
         .catch((err) => { console.error("Copy failed:", err); });
     });
@@ -380,6 +474,7 @@ function truncatePrompt(prompt, maxLength) {
   if (prompt.length <= maxLength) return prompt;
   return prompt.slice(0, maxLength) + "...";
 }
+
 
 /* ------------------ Create Prompt Buddy Playground Panel (Tabbed Layout) ------------------ */
 function createDropdownPanel() {
@@ -705,6 +800,69 @@ function createFloatingButton() {
 
   /* ------------------ Floating Button Icon Click (updated) ------------------ */
 
+  // imgBtn.addEventListener("click", () => {
+  //   const inputBox = findActiveTextbox();
+  //   if (!inputBox) {
+  //     alert("Couldn't find textbox.");
+  //     return;
+  //   }
+  
+  //   const tag = inputBox.tagName;
+  //   const isInputLike = tag === "INPUT" || tag === "TEXTAREA";
+  //   const isEditable  = inputBox.isContentEditable;
+  //   const original = isInputLike
+  //     ? inputBox.value.trim()
+  //     : inputBox.innerText.trim();
+  
+  //   if (!original) {
+  //     alert("⚠️ Please type something into the box first.");
+  //     return;
+  //   }
+  
+  //   const endpoint = promptType === "descriptive"
+  //     ? `${BASE_URL}/suggest-templates-descriptive`
+  //     : `${BASE_URL}/suggest-templates`;
+  
+  //   fetch(endpoint, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ prompt: original })
+  //   })
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       const templates = data.templates || [];
+  //       if (!templates.length) return;
+  //       const newPrompt = Array.isArray(templates)
+  //         ? templates.join("\n\n")
+  //         : templates;
+  
+  //       if (isInputLike) {
+  //         // use the native setter on either INPUT or TEXTAREA
+  //         const proto = tag === "TEXTAREA"
+  //           ? window.HTMLTextAreaElement.prototype
+  //           : window.HTMLInputElement.prototype;
+  //         const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
+  //         setter.call(inputBox, newPrompt);
+  //         // notify React
+  //         inputBox.dispatchEvent(new Event("input",  { bubbles: true }));
+  //         inputBox.dispatchEvent(new Event("change", { bubbles: true }));
+  //       }
+  //       else if (isEditable) {
+  //         // contenteditable case
+  //         inputBox.innerText = newPrompt;
+  //         inputBox.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  //       }
+  //       else {
+  //         console.warn("Unknown box type, can't set value:", inputBox);
+  //       }
+  
+  //       inputBox.focus();
+  //       removeScorePipePopup();
+  //       scorePrompt(newPrompt);
+  //     })
+  //     .catch(err => console.error("Error fetching prompt suggestion:", err));
+  // });
+  
   imgBtn.addEventListener("click", () => {
     const inputBox = findActiveTextbox();
     if (!inputBox) {
@@ -715,23 +873,28 @@ function createFloatingButton() {
     const tag = inputBox.tagName;
     const isInputLike = tag === "INPUT" || tag === "TEXTAREA";
     const isEditable  = inputBox.isContentEditable;
-    const original = isInputLike
-      ? inputBox.value.trim()
-      : inputBox.innerText.trim();
+    const original = isInputLike ? inputBox.value.trim() : inputBox.innerText.trim();
   
     if (!original) {
       alert("⚠️ Please type something into the box first.");
       return;
     }
   
+    // Choose endpoint based on prompt type
     const endpoint = promptType === "descriptive"
       ? `${BASE_URL}/suggest-templates-descriptive`
       : `${BASE_URL}/suggest-templates`;
   
+    // Build the payload. For descriptive prompts, include the summary if available.
+    const payload = { prompt: original };
+    if (promptType === "descriptive" && contextSummary) {
+      payload.summary = contextSummary;
+    }
+  
     fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: original })
+      body: JSON.stringify(payload)
     })
       .then(res => res.json())
       .then(data => {
@@ -742,22 +905,19 @@ function createFloatingButton() {
           : templates;
   
         if (isInputLike) {
-          // use the native setter on either INPUT or TEXTAREA
+          // Use the native setter for INPUT or TEXTAREA
           const proto = tag === "TEXTAREA"
             ? window.HTMLTextAreaElement.prototype
             : window.HTMLInputElement.prototype;
           const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
           setter.call(inputBox, newPrompt);
-          // notify React
-          inputBox.dispatchEvent(new Event("input",  { bubbles: true }));
+          // Dispatch events for frameworks like React
+          inputBox.dispatchEvent(new Event("input", { bubbles: true }));
           inputBox.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        else if (isEditable) {
-          // contenteditable case
+        } else if (isEditable) {
           inputBox.innerText = newPrompt;
           inputBox.dispatchEvent(new InputEvent("input", { bubbles: true }));
-        }
-        else {
+        } else {
           console.warn("Unknown box type, can't set value:", inputBox);
         }
   
@@ -767,7 +927,6 @@ function createFloatingButton() {
       })
       .catch(err => console.error("Error fetching prompt suggestion:", err));
   });
-  
   
   
   document.body.appendChild(container);
