@@ -25,7 +25,7 @@ def enhance_prompt_with_groq(prompt: str, summary: str = ""):
                 "the objective, desired output format, and any ethical caveats. If the prompt is harmful or unethical, respond only with: 'I cannot optimize it.' "
                 "Return only the structured format without any additional commentary. \n\n"
                 "You will also receive a brief summary of the user's previous prompts intended for context continuity. However, your primary focus (at least 90%) "
-                "must remain solely on the current prompt. If the historical summary is unrelated, ignore it completely. Only if there is meaningful continuity should you "
+                "must remain solely on the current prompt. If the historical summary is unrelated, ignore it completely. Only if there is meaningful continuity should you"
                 "incorporate elements of the summary into the enhanced output."
             )
         },
