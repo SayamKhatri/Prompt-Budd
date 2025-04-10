@@ -2,9 +2,17 @@
   "manifest_version": 3,
   "name": "PromptBud",
   "version": "1.0",
-  "description": "Production",
+  "description": "PromptBud is an AI-powered assistant that enhances and optimizes your prompts, scores your prompts in real-time, detects PII and much more",
   "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.deepseek.com/*",
+    "https://gemini.google.com/app/*",
+    "https://grok.com/*",
+    "https://*.claude.ai/*",
+    "https://*.perplexity.ai/*"
+  ],
+  
   "icons": {
     "16": "icons/logo-16.png",
     "48": "icons/logo-48.png",
@@ -29,7 +37,14 @@
   ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.deepseek.com/*",
+        "https://gemini.google.com/app/*",
+        "https://grok.com/*",
+        "https://*.claude.ai/*",
+        "https://*.perplexity.ai/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

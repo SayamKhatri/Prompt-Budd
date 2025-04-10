@@ -10,6 +10,8 @@ let activeView         = "llm";
 let viewBeforeSettings = "llm";   
 let currentTextbox = null;
 let isUIActive = false;
+let contextSummary = "";  // Store the summary of the last 5 prompts.
+
 
 // Global flags for detection settings and prompt type
 let scoreDetectionEnabled = true;
@@ -131,7 +133,6 @@ function removeScorePipePopup() {
 
 /* ------------------ PII Detection Functions ------------------ */
 function showPIIPopup() {
-  if (document.getElementById("pii-tag")) return;
   const imgBtn = document.getElementById("smart-suggest-img");
   if (!imgBtn) return;
   imgBtn.style.position = "relative";
@@ -177,6 +178,7 @@ function detectPII(prompt) {
 }
 
 /* ------------------ Score Prompt Function ------------------ */
+
 function scorePrompt(prompt) {
   if (!scoreDetectionEnabled) {
     removeScorePipePopup();
@@ -197,9 +199,12 @@ function scorePrompt(prompt) {
   })
     .then(res => res.json())
     .then(data => {
-      const score = data.score || "unknown";
+      const scoreObj = data.score || {}; 
+      const score = scoreObj.score || "unknown";
+      const displayedPrompt = scoreObj.masked_prompt || cleaned;
+      
       if (["low", "medium", "high"].includes(score)) {
-        scoreHistory.unshift({ prompt: cleaned, score });
+        scoreHistory.unshift({ prompt: displayedPrompt, score });
         if (scoreHistory.length > MAX_HISTORY) scoreHistory.pop();
         updateScoreHistoryUI();
         showScorePipePopup(score);
@@ -237,12 +242,12 @@ function checkAndUpdateLLMSuggestion() {
       }
     })
     .catch(err => {
-      console.error("🔥 Failed to get LLM suggestion:", err);
+      console.error("Failed to get LLM suggestion:", err);
     });
 }
 
 /* ------------------ Observer Function ------------------ */
-/* ——— tweak to your observer so it works for both <textarea> and contenteditable ——— */
+
 function observeInputBox() {
   const box = findActiveTextbox();
   if (!box) {
@@ -253,10 +258,15 @@ function observeInputBox() {
   const isTextarea = box.tagName === "TEXTAREA";
   const getText    = () => isTextarea ? box.value : box.innerText;
 
-  // Debounced change handler
+
   const handleChange = () => {
+    // If the UI is toggled off, do nothing.
+    if (!isUIActive) return;
+    
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
+      // Re-check before executing
+      if (!isUIActive) return;
       const current = getText().trim();
       if (!current) {
         removeScorePipePopup();
@@ -265,9 +275,9 @@ function observeInputBox() {
       }
       scorePrompt(current);
       detectPII(current);
-    }, 700);
+    }, 750);
   };
-
+  
   // Listen for edits
   if (isTextarea) {
     box.addEventListener("input", handleChange);
@@ -280,27 +290,46 @@ function observeInputBox() {
     });
   }
 
-  // On Enter: hide popups and record history
+// On Enter: hide popups and record history & trigger LLM suggestion
   box.addEventListener("keydown", (event) => {
-    const isEnter    = event.key === "Enter";
+    // If UI is off, do nothing.
+    if (!isUIActive) return;
+    
+    const isEnter = event.key === "Enter";
     const plainEnter = isEnter && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
     if (!plainEnter) return;
 
-    // ** Hide the popups immediately **
+    // Hide the popups immediately
     removeScorePipePopup();
     removePIIPopup();
 
-    // Then record to history & trigger LLM suggestion
+    // Then record to history & trigger LLM suggestion and summary generation
     setTimeout(() => {
       const submitted = lastScoredPrompt;
       if (!submitted) return;
       if (!promptHistory.length || promptHistory[0] !== submitted) {
         promptHistory.unshift(submitted);
         if (promptHistory.length > MAX_HISTORY) promptHistory.pop();
+        
+        // Existing call to prompt_classifier
         checkAndUpdateLLMSuggestion();
+
+        // New: Call the summary endpoint with the last 5 prompts
+        fetch(`${BASE_URL}/summary-gen`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompts: promptHistory.slice(0, MAX_HISTORY) })
+        })
+          .then(res => res.json())
+          .then(data => {
+            contextSummary = data.summary || "";
+            console.log("Updated context summary:", contextSummary);
+          })
+          .catch(err => console.error("Summary generation error:", err));
       }
     }, 300);
   });
+
 
   console.log("👁️ Observer & Enter key capture initialized");
 }
@@ -308,6 +337,10 @@ function observeInputBox() {
 function checkForNewTextbox() {
   const newBox = findActiveTextbox();
   if (newBox && newBox !== currentTextbox) {
+
+    // Reset the summary when the chat screen changes.
+    contextSummary = "";
+    promptHistory = [];  // Clear old history
     // Clear popups from the previous screen
     removeScorePipePopup();
     removePIIPopup();
@@ -322,6 +355,7 @@ function checkForNewTextbox() {
     observeInputBox();
   }
 }
+
 /* ------------------ Update Score History UI with Mini Pipe Meter & Copy Icon ------------------ */
 function updateScoreHistoryUI() {
   const historyList = document.getElementById("score-history-list");
@@ -350,9 +384,13 @@ function updateScoreHistoryUI() {
       const color = i < fillCount ? fillColor : "#ddd";
       meterHTML += `<div class="mini-segment" style="background-color:${color};"></div>`;
     }
+    
+    // Use the masked prompt if it exists; otherwise, use the raw prompt.
+    const displayPrompt = item.masked_prompt ? item.masked_prompt : item.prompt;
+    
     li.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="prompt-text" style="font-size:13px;">${truncatePrompt(item.prompt,40)}</span>
+        <span class="prompt-text" style="font-size:13px;">${truncatePrompt(displayPrompt, 40)}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="score-dot" style="background:${fillColor};"></span>
@@ -360,15 +398,8 @@ function updateScoreHistoryUI() {
       </div>
     `;
 
-    // li.innerHTML = `
-    //   <div style="display: flex; align-items: center; gap: 8px;">
-    //     <span class="prompt-text" style="font-size: 13px;">${truncatePrompt(item.prompt, 40)}</span>
-    //     <div class="mini-pipe-meter">${meterHTML}</div>
-    //   </div>
-    //   <span class="copy-icon" title="Copy prompt" style="cursor: pointer; font-size: 16px;">📋</span>
-    // `;
     li.querySelector(".copy-icon").addEventListener("click", () => {
-      navigator.clipboard.writeText(item.prompt)
+      navigator.clipboard.writeText(displayPrompt)
         .then(() => { alert("Prompt copied!"); })
         .catch((err) => { console.error("Copy failed:", err); });
     });
@@ -380,6 +411,7 @@ function truncatePrompt(prompt, maxLength) {
   if (prompt.length <= maxLength) return prompt;
   return prompt.slice(0, maxLength) + "...";
 }
+
 
 /* ------------------ Create Prompt Buddy Playground Panel (Tabbed Layout) ------------------ */
 function createDropdownPanel() {
@@ -702,9 +734,7 @@ function createFloatingButton() {
     kebabContainer.style.opacity = "0";
   });
   
-
-  /* ------------------ Floating Button Icon Click (updated) ------------------ */
-
+  
   imgBtn.addEventListener("click", () => {
     const inputBox = findActiveTextbox();
     if (!inputBox) {
@@ -715,26 +745,37 @@ function createFloatingButton() {
     const tag = inputBox.tagName;
     const isInputLike = tag === "INPUT" || tag === "TEXTAREA";
     const isEditable  = inputBox.isContentEditable;
-    const original = isInputLike
-      ? inputBox.value.trim()
-      : inputBox.innerText.trim();
+    const original = isInputLike ? inputBox.value.trim() : inputBox.innerText.trim();
   
     if (!original) {
       alert("⚠️ Please type something into the box first.");
       return;
     }
-  
+
+    // Show the animated loading dots and hide the logo
+    showLoadingDots();
+
+    // Choose endpoint based on prompt type
     const endpoint = promptType === "descriptive"
       ? `${BASE_URL}/suggest-templates-descriptive`
       : `${BASE_URL}/suggest-templates`;
   
+    // Build the payload. For descriptive prompts, include the summary if available.
+    const payload = { prompt: original };
+    if (promptType === "descriptive" && contextSummary) {
+      payload.summary = contextSummary;
+    }
+  
     fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: original })
+      body: JSON.stringify(payload)
     })
       .then(res => res.json())
       .then(data => {
+
+      // Hide the loading dots and show the logo again
+      hideLoadingDots();
         const templates = data.templates || [];
         if (!templates.length) return;
         const newPrompt = Array.isArray(templates)
@@ -742,22 +783,19 @@ function createFloatingButton() {
           : templates;
   
         if (isInputLike) {
-          // use the native setter on either INPUT or TEXTAREA
+          // Use the native setter for INPUT or TEXTAREA
           const proto = tag === "TEXTAREA"
             ? window.HTMLTextAreaElement.prototype
             : window.HTMLInputElement.prototype;
           const setter = Object.getOwnPropertyDescriptor(proto, "value").set;
           setter.call(inputBox, newPrompt);
-          // notify React
-          inputBox.dispatchEvent(new Event("input",  { bubbles: true }));
+          // Dispatch events for frameworks like React
+          inputBox.dispatchEvent(new Event("input", { bubbles: true }));
           inputBox.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        else if (isEditable) {
-          // contenteditable case
+        } else if (isEditable) {
           inputBox.innerText = newPrompt;
           inputBox.dispatchEvent(new InputEvent("input", { bubbles: true }));
-        }
-        else {
+        } else {
           console.warn("Unknown box type, can't set value:", inputBox);
         }
   
@@ -769,9 +807,48 @@ function createFloatingButton() {
   });
   
   
-  
   document.body.appendChild(container);
 }
+// ------------------ Loading Dots Helper Functions ------------------
+
+function showLoadingDots() {
+  // Hide the main logo during loading.
+  const imgBtn = document.getElementById("smart-suggest-img");
+  if (imgBtn) {
+    imgBtn.style.display = "none";
+  }
+  
+  // Create or show the loading dots overlay.
+  let loader = document.getElementById("loading-dots");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "loading-dots";
+    loader.className = "loading-dots";
+    loader.innerHTML = "<span></span><span></span><span></span>";
+    // Append this overlay to the prompt buddy container.
+    const container = document.getElementById("prompt-buddy-container");
+    if (container) {
+      container.appendChild(loader);
+    }
+  } else {
+    loader.style.display = "inline-flex";
+  }
+}
+
+function hideLoadingDots() {
+  // Show the main logo once loading is complete.
+  const imgBtn = document.getElementById("smart-suggest-img");
+  if (imgBtn) {
+    imgBtn.style.display = "block";
+  }
+  
+  // Hide the loading dots overlay.
+  const loader = document.getElementById("loading-dots");
+  if (loader) {
+    loader.style.display = "none";
+  }
+}
+
 
 // ------------------ UI Toggle Helper Functions ------------------
 
@@ -942,6 +1019,47 @@ style.innerHTML = `
   animation: logoRedPulse 0.5s ease-in-out;
 }
 
+/* Loading Dots on Black Overlay Animation */
+@keyframes blink {
+  0% { opacity: 0.2; }
+  20% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;   /* match your container dimensions */
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001; /* above the logo */
+  background: black;  /* black overlay */
+  border-radius: 8px;
+}
+
+.loading-dots span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: white;  /* white dots */
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: blink 1.4s infinite;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 
 /* END BUDDY CSS --------------------------------------------------------- */
