@@ -275,7 +275,7 @@ function observeInputBox() {
       }
       scorePrompt(current);
       detectPII(current);
-    }, 750);
+    }, 700);
   };
   
   // Listen for edits
