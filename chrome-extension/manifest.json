@@ -10,7 +10,8 @@
     "https://gemini.google.com/app/*",
     "https://grok.com/*",
     "https://*.claude.ai/*",
-    "https://*.perplexity.ai/*"
+    "https://*.perplexity.ai/*",
+    "https://prompt-assistant-282032561204.us-east1.run.app/*"
   ],
   
   "icons": {

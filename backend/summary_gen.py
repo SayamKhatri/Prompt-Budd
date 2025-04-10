@@ -3,6 +3,9 @@ from groq import Groq
 import os
 from dotenv import load_dotenv
 import time
+import openai
+
+load_dotenv()
 
 _groq_client = None
 
@@ -14,6 +17,41 @@ def get_groq_client():
             raise RuntimeError("Missing GROQ_API_KEY environment variable.")
         _groq_client = Groq(api_key=api_key)
     return _groq_client
+
+# --- OpenAI Client Setup (for fallback) ---
+_openai_initialized = False
+
+def get_openai_client():
+    global _openai_initialized
+    if not _openai_initialized:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing OPENAI_API_KEY environment variable.")
+        openai.api_key = api_key
+        _openai_initialized = True
+    return openai
+
+
+def fallback_generate_summary(prompt_text: str, messages: list) -> str:
+    """
+    Fall back to OpenAI's GPT-4o-mini for summary generation.
+    """
+    get_openai_client()  # Ensure OpenAI is initialized
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=150,
+            temperature=0.7
+        )
+        if response['choices'] and response['choices'][0]['message']:
+            return response['choices'][0]['message']['content'].strip()
+        else:
+            return ""
+    except Exception as e:
+        print(f"OpenAI fallback error in summary generation: {e}")
+        return ""
+
 
 def generate_summary(prompts: list[str]) -> str:
     """
@@ -64,5 +102,11 @@ def generate_summary(prompts: list[str]) -> str:
                 time.sleep(retry_delay)
                 retry_delay *= 2  # exponential backoff
             else:
-                return ""
+                print("Groq API unavailable after retries. Falling back to GPT-4o-mini...")
+                return fallback_generate_summary(prompt_text, messages)
 
+print(generate_summary([
+    "Discuss how renewable energy technologies are transforming the global energy market.",
+    "Explain the benefits of sustainable energy in reducing carbon emissions.",
+    "What policies can governments adopt to accelerate the adoption of renewables?"
+]))
