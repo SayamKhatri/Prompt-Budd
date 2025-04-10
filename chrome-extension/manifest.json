@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PromptBud",
   "version": "1.0",
-  "description": "PromptBud is an AI-powered assistant that enhances and optimizes your prompts, scores your prompts in real-time, detects PII and much more",
+  "description": "Enhances and scores your prompts in real-time, detects PII and much more",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": [
     "https://chatgpt.com/*",
