@@ -5,8 +5,6 @@ from dotenv import load_dotenv
 import time
 import openai
 
-load_dotenv()
-
 _groq_client = None
 
 def get_groq_client():
@@ -104,9 +102,3 @@ def generate_summary(prompts: list[str]) -> str:
             else:
                 print("Groq API unavailable after retries. Falling back to GPT-4o-mini...")
                 return fallback_generate_summary(prompt_text, messages)
-
-print(generate_summary([
-    "Discuss how renewable energy technologies are transforming the global energy market.",
-    "Explain the benefits of sustainable energy in reducing carbon emissions.",
-    "What policies can governments adopt to accelerate the adoption of renewables?"
-]))
