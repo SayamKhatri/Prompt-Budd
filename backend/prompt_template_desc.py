@@ -116,7 +116,7 @@ def enhance_prompt_with_groq(prompt: str, summary: str = ""):
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="llama-3.3-70b-specdec",   
+                model="llama-3.1-8b-instant",   
                 messages=messages,
                 temperature=0.7
             )
