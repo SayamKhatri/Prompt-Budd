@@ -3,7 +3,7 @@
   "name": "PromptBud",
   "version": "1.0",
   "description": "Enhances and scores your prompts in real-time, detects PII and much more",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.deepseek.com/*",
