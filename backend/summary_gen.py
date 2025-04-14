@@ -85,7 +85,7 @@ def generate_summary(prompts: list[str]) -> str:
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="llama-3.3-70b-versatile",
                 messages=messages,
                 temperature=0.7
             )
