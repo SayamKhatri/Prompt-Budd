@@ -103,9 +103,9 @@ def enhance_prompt_with_groq(prompt: str, summary: str = ""):
                 f"Basic prompt: \"{prompt}\"\n\n"
                 f"History summary of past 5 prompts: {summary}\n\n"
                 "Please convert it into the following structured format in first-person language:\n"
-                "Goal: What do I want the AI to do?\n"
-                "Return format: Should the answer be in text, table, code, etc.?\n"
-                "Warning: Any ethical issues or caveats to consider?\n"
+                "Goal: What do I want the AI to do?\n\n"
+                "Return format: Should the answer be in text, table, code, etc.?\n\n"
+                "Warning: Any ethical issues or caveats to consider?\n\n"
                 "Context dump: Any additional assumptions, background, or information that could help the AI (optional)."
             )
         }
