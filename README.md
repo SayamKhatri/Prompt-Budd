@@ -1,25 +1,4 @@
 # AI-Powered-Prompt-Engineering-Assistant
 Applied-GenAI Tool
 
-```
-prompt_assistant_project/
-├── backend/
-│   ├── main.py
-│   ├── prompt_templates.py
-│   ├── detect_pii.py
-│   ├── prompt_score.py
-└── frontend/
-│    └── (Chrome extension code)
-└── requirements.txt
-```
-
-```
-chrome-extension/
-├── manifest.json
-├── content.js
-├── popup.html
-├── popup.css
-├── popup.js
-└── icons/
-    └── icon.png
-```
+![Untitled design](https://github.com/user-attachments/assets/7df0e938-ef82-4ecf-940d-a39bb28142e8)
