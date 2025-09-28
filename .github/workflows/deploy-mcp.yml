@@ -62,5 +62,5 @@ jobs:
             --project=promptbud \
             --allow-unauthenticated \
             --memory=512Mi \
-            --port=8000 \
+            --port=8080 \
             --set-env-vars=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}

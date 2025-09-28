@@ -16,6 +16,7 @@ def prompt_enhance(prompt: str):
 
     Returns:
         dict with key "templates": list[str]  
+        
     """
     try:
         templates = suggest_prompt_templates(prompt)
