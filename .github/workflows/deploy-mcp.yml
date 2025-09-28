@@ -3,7 +3,7 @@ name: Deploy MCP Server to Cloud Run
 on:
   push:
     branches:
-      - main
+      - mcp-feature
     paths:
       - 'mcp-server/**'
       - 'backend/prompt_template_desc.py'
