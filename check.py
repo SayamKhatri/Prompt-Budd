@@ -5,7 +5,7 @@ async def main():
     client = MultiServerMCPClient({
         "prompt-budd-mcp": {
             "transport": "streamable_http",
-            "url": "http://127.0.0.1:8000/mcp"
+            "url": "https://prompt-budd-mcp-282032561204.us-east1.run.app/mcp"
         }
     })
 

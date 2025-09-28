@@ -1,29 +1,20 @@
-# Use slim Python base
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements
 COPY requirements.txt .
 
-# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create backend folder and copy specific files
 RUN mkdir -p backend
 COPY backend/prompt_template_desc.py backend/
 COPY backend/prompt_templates_short.py backend/
 
-# Copy mcp-server
 COPY mcp-server ./mcp-server
 
-# Ensure backend is a package
 RUN touch backend/__init__.py
 
-# Expose MCP port
 EXPOSE 8000
 
-# Run FastMCP server
 CMD ["python", "-m", "mcp-server.server"]
 
