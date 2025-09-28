@@ -86,3 +86,66 @@ Use **mcp-remote** as a lightweight bridge to connect stdio-only clients to our 
 }
 ```
 
+---
+
+# Why This Matters
+
+**Prompt-Budd MCP** is a Model Context Protocol (MCP) server that enhances and standardizes prompts before they’re sent to LLMs, agents, or IDE copilots. Think of it as a **prompt entry point**, it takes raw, messy intent and returns a clean, structured, high-quality prompt ready for downstream use. 
+
+It acts as a **universal pre-processor** for prompts.
+
+* Humans save time writing better prompts.
+* Agents save cycles trying to parse vague input.
+* Teams get consistent quality across workflows.
+
+---
+
+# Use Cases
+
+#### 1. **Reduce Dependence on Rewriter Agents**
+
+* No need to spin up a separate rewriter agent for every workflow.
+* Agents can call this tool first → get an enhanced prompt → save compute & infra overhead.
+
+#### 2. **Built-in Prompt Quality Standardization**
+
+* Teams get consistent, predictable prompts across projects.
+* No more “every dev/user has their own style” → shared prompt standards.
+
+#### 3. **First Call for Multi-Agent Pipelines**
+
+* Use as the **very first step** in an agent workflow.
+* Raw user intent → enhanced prompt → passed downstream to planners, validators, or executors.
+
+#### 4. **IDE & Desktop Copilot Companion**
+
+* **In Cursor IDE**: turn vague coding instructions into well-structured prompts.
+* **In Claude Desktop**: polish research, analysis, or creative prompts in one click.
+* Works like a **prompt co-pilot for humans**.
+
+#### 5. **Prompt Library Auto-Generation**
+
+* Turn messy instructions into reusable, high-quality templates.
+* Build internal **prompt libraries** automatically instead of handcrafting them.
+
+#### 6. **Team-Level Prompt Governance**
+
+* Enforce tone, clarity, and formatting rules before prompts ever reach the model.
+* Great for **enterprises** that care about consistent LLM outputs.
+
+#### 7. **AI Agent Builders**
+
+* Drop this MCP tool into agent frameworks (LangChain, AutoGen, custom MCP clients).
+* Lets agents spend less time “understanding” and more time **executing**.
+
+#### 8. **Data & Knowledge Workflows**
+
+* Analysts, researchers, and ops teams can dump raw notes → get structured, analysis-ready prompts.
+* Ensures downstream LLM tasks (summarization, classification, enrichment) start on solid ground.
+
+---
+
+
+
+
+
