@@ -2,9 +2,12 @@ from mcp.server.fastmcp import FastMCP
 from backend.prompt_template_desc import enhance_prompt_with_groq
 from backend.prompt_templates_short import suggest_prompt_templates
 from dotenv import load_dotenv
+import os
 load_dotenv() 
 
-mcp = FastMCP('prompt-budd-mcp',host='0.0.0.0', port=8000)
+port = int(os.environ.get("PORT", 8000))
+
+mcp = FastMCP('prompt-budd-mcp',host='0.0.0.0', port=port)
 
 @mcp.tool()
 def prompt_enhance(prompt: str):
@@ -16,7 +19,7 @@ def prompt_enhance(prompt: str):
 
     Returns:
         dict with key "templates": list[str]  
-        
+
     """
     try:
         templates = suggest_prompt_templates(prompt)
