@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'mcp-server/**'
+      - 'mcp-server/server.py'
       - 'backend/prompt_template_desc.py'
       - 'backend/prompt_templates_short.py'
       - 'Dockerfile.mcp'
