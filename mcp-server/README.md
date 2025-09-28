@@ -9,30 +9,6 @@ Use the remote URL directly in MCP clients (no local install required):
 ```
 https://YOUR-CLOUD-RUN-URL/mcp/            # no auth required
 ```
-
-## Connect to Cursor
-
-Add a remote MCP in Cursor via **command** using `mcp-remote`, pointing at your URL (pattern mirrors Tavily’s).
-
-```json
-{
-  "mcpServers": {
-    "prompt-budd-remote": {
-      "command": "npx -y mcp-remote https://YOUR-CLOUD-RUN-URL/mcp/?apiKey=<your-api-key>",
-      "env": {}
-    }
-  }
-}
-```
-
-## Connect to Claude Desktop
-
-Add a new **Integration** in Claude Desktop and paste the same remote URL (with your key if used).
-
-```
-https://YOUR-CLOUD-RUN-URL/mcp/?apiKey=<your-api-key>
-```
-
 ## Connect with LangChain MCP Adapters
 
 You can also use Prompt-Budd as a remote MCP server in LangChain with the `langchain-mcp-adapters` package:
@@ -72,6 +48,29 @@ resp = client.responses.create(
     input="Do you have access to the prompt-budd MCP server?"
 )
 print(resp.output_text)
+```
+
+## Connect to Cursor
+
+Add a remote MCP in Cursor via **command** using `mcp-remote`, pointing at your URL (pattern mirrors Tavily’s).
+
+```json
+{
+  "mcpServers": {
+    "prompt-budd-remote": {
+      "command": "npx -y mcp-remote https://YOUR-CLOUD-RUN-URL/mcp/?apiKey=<your-api-key>",
+      "env": {}
+    }
+  }
+}
+```
+
+## Connect to Claude Desktop
+
+Add a new **Integration** in Claude Desktop and paste the same remote URL (with your key if used).
+
+```
+https://YOUR-CLOUD-RUN-URL/mcp/?apiKey=<your-api-key>
 ```
 
 ## Clients that don’t support remote MCPs

@@ -3,9 +3,10 @@ from backend.prompt_template_desc import enhance_prompt_with_groq
 from backend.prompt_templates_short import suggest_prompt_templates
 from dotenv import load_dotenv
 load_dotenv() 
+print(">>> Custom MCP server starting...")
 
 
-mcp = FastMCP('prompt-budd-mcp')
+mcp = FastMCP('prompt-budd-mcp',host='0.0.0.0', port=8000)
 
 @mcp.tool()
 def prompt_enhance(prompt: str):
