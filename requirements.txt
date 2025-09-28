@@ -5,3 +5,5 @@ pydantic
 uvicorn
 google-genai
 groq
+mcp
+langchain-mcp-adapters
