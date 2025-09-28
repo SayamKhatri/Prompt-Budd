@@ -11,7 +11,7 @@ https://prompt-budd-mcp-282032561204.us-east1.run.app/mcp      # no auth require
 ```
 ## Connect with LangChain MCP Adapters
 
-You can also use Prompt-Budd as a remote MCP server in LangChain with the `langchain-mcp-adapters` package:
+Use Prompt-Budd as a remote MCP server in LangChain with the `langchain-mcp-adapters` package:
 
 ```python
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -52,7 +52,7 @@ print(resp.output_text)
 
 ## Connect to Cursor
 
-Add a remote MCP in Cursor via **command** using `mcp-remote`, pointing at your URL
+Add a remote MCP in Cursor via **command** using `mcp-remote`, pointing at our URL
 
 ```json
 {
@@ -67,7 +67,7 @@ Add a remote MCP in Cursor via **command** using `mcp-remote`, pointing at your 
 
 ## Connect to Claude Desktop
 
-Add a new **Integration** in Claude Desktop and paste the same remote URL (with your key if used).
+Add a new **Integration** in Claude Desktop and paste the same remote URL.
 
 ```
 https://prompt-budd-mcp-282032561204.us-east1.run.app/mcp
@@ -75,7 +75,7 @@ https://prompt-budd-mcp-282032561204.us-east1.run.app/mcp
 
 ## Clients that don’t support remote MCPs
 
-Use **mcp-remote** as a lightweight bridge to connect stdio-only clients to your remote server.
+Use **mcp-remote** as a lightweight bridge to connect stdio-only clients to our remote server.
 
 ```json
 {
