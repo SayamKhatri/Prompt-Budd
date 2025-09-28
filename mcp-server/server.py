@@ -6,7 +6,6 @@ import os
 load_dotenv() 
 
 port = int(os.environ.get("PORT", 8000))
-
 mcp = FastMCP('prompt-budd-mcp',host='0.0.0.0', port=port)
 
 @mcp.tool()
