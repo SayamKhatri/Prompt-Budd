@@ -25,4 +25,10 @@ https://github.com/user-attachments/assets/67719ef4-1011-4609-868f-916ce63f7179
 
 👉 **[PromptBud on Chrome Web Store](https://chromewebstore.google.com/detail/promptbud/nlablchghipjcomoacflekgiloolchen?authuser=0&hl=en)**
 
+
+# Prompt-Budd MCP Server
+
+Use Prompt-Budd’s prompt enhancement in any MCP-compatible client.  
+👉 See the [MCP Server README](./mcp-server/README.md) for setup and usage.
+
 <p align="center"> <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20by%20Sayam%20Khatri-blueviolet?style=for-the-badge" alt="Made by Sayam Khatri" /> <br/> <sub>© 2025 Sayam Khatri. All rights reserved.</sub> </p>
