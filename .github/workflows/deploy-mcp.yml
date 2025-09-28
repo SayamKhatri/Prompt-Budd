@@ -10,8 +10,6 @@ on:
       - 'backend/prompt_templates_short.py'
       - 'Dockerfile.mcp'
       - 'requirements.txt'
-    paths-ignore:
-      - 'mcp-server/README.md'
 
 jobs:
   continuous_integration:
