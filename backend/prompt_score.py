@@ -4,7 +4,6 @@ from detect_pii import mask_pii
 import time
 import openai
 
-
 _gemini_client = None
 _openai_initialized = False
 
