@@ -30,6 +30,7 @@ def build_scoring_prompt(safe_prompt: str) -> str:
     """
     Build the scoring prompt text for both Gemini and OpenAI calls.
     """
+    
     return (
         "You are an expert AI prompt evaluator. Your task is to assess the quality of a given prompt based on the following criteria:\n"
         "1. Clarity: Is the prompt clear, structured, unambiguous, and easy to understand?\n"
