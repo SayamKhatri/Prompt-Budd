@@ -73,6 +73,12 @@ def rate_prompt_quality(prompt: str) -> dict:
     client = get_gemini_client()
     # Mask any PII from the input prompt.
     safe_prompt = mask_pii(prompt)
+    # adding manual to avoid api calls 
+    return {
+        "score": "unknown",   
+        "masked_prompt": safe_prompt
+    }
+    
     scoring_prompt = build_scoring_prompt(safe_prompt)
     
     max_retries = 2
