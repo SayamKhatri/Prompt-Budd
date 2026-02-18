@@ -76,6 +76,9 @@ def rate_prompt_quality(prompt: str) -> dict:
     safe_prompt = mask_pii(prompt)[:2000]  
     scoring_prompt = build_scoring_prompt(safe_prompt)
     
+    # hard coding for now
+    return {"score": "medium", "masked_prompt": safe_prompt}
+    
     max_retries = 2
     retry_delay = 0.3
     for attempt in range(max_retries):
