@@ -7,6 +7,7 @@ import openai
 _gemini_client = None
 _openai_initialized = False
 
+
 def get_gemini_client():
     global _gemini_client
     if _gemini_client is None:
